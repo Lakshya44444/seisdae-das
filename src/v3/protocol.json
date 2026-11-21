@@ -1,0 +1,18 @@
+{
+  "seed": 2026,
+  "levels_db": [-5, 0, 5, 10],
+  "classical": {
+    "bandpass_hz": [[1, 10], [0.5, 15], [0.5, 25]],
+    "f_k_velocity": [250, 500, 1000],
+    "wavelet_threshold_multiplier": [0.5, 1, 2],
+    "svd_rank": [1, 2, 4, 8],
+    "selection": "maximum mean development ordinary gain over all levels"
+  },
+  "stretch": {"factors": [1, 2, 4, 8], "selection": "maximum mean development out-of-fold SI gain over all levels"},
+  "crossfit": {"folds": 5, "efficiency": [0.25, 0.5, 1.0]},
+  "objective": {"steps": 144, "batch_size": 32, "learning_rate": 0.00003, "check_every": 12},
+  "scratch": {"steps": 200, "batch_size": 32, "learning_rate": 0.001},
+  "external": {"starts": [500,1300,2100], "recordings": ["2020062417","2020062506","2020062619"]},
+  "sensitivity": {"source_snr_min": 35},
+  "provenance": "Configuration reconstructed from surviving source, manifests, study report and result grids. Reconstructed training details are evaluated anew."
+}

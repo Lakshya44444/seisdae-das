@@ -1,0 +1,1938 @@
+[
+ {
+  "title": "Can a station denoiser hear earthquakes through fiber?",
+  "dark": true,
+  "items": [
+   {
+    "x": 0.0,
+    "y": 0.0,
+    "w": 1280.0,
+    "h": 720.0,
+    "type": "image",
+    "name": "hero.jpg"
+   },
+   {
+    "x": 58.0,
+    "y": 100.0,
+    "w": 900.0,
+    "h": 327.0,
+    "type": "text",
+    "v": "Can a station denoiser\nhear earthquakes\nthrough fiber?",
+    "size": 67.0,
+    "bold": true,
+    "serif": true,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 65.0,
+    "y": 518.0,
+    "w": 1040.0,
+    "h": 51.0,
+    "type": "text",
+    "v": "Shantanu  /  AI/ML Course Project · IIT Roorkee",
+    "size": 27.0,
+    "bold": false,
+    "serif": false,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 65.0,
+    "y": 588.0,
+    "w": 700.0,
+    "h": 40.0,
+    "type": "text",
+    "v": "10 November 2026",
+    "size": 23.0,
+    "bold": false,
+    "serif": false,
+    "color": "1FB5C9"
+   }
+  ],
+  "notes": "Open on the real gather. Each row is a different place along the same fiber. Follow the dark and bright patches across the rows. The question is whether a network trained on a different sensor can preserve the first arriving wave. The unit of evidence in this talk is the earthquake."
+ },
+ {
+  "title": "One cable samples motion at thousands of points.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "One cable samples motion at thousands of points.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 66.0,
+    "y": 201.0,
+    "w": 250.0,
+    "h": 58.0,
+    "type": "text",
+    "v": "Station",
+    "size": 39.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 130.0,
+    "y": 383.0,
+    "w": 125.0,
+    "h": 15.0,
+    "type": "rect",
+    "color": "0E1A2B"
+   },
+   {
+    "x": 177.0,
+    "y": 300.0,
+    "w": 34.0,
+    "h": 82.0,
+    "type": "rect",
+    "color": "5B6B7C"
+   },
+   {
+    "x": 70.0,
+    "y": 448.0,
+    "w": 270.0,
+    "h": 55.0,
+    "type": "text",
+    "v": "One location",
+    "size": 28.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 480.0,
+    "y": 201.0,
+    "w": 560.0,
+    "h": 58.0,
+    "type": "text",
+    "v": "Optical fiber",
+    "size": 39.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 505.0,
+    "y": 359.0,
+    "w": 643.0,
+    "h": 8.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 479.0,
+    "y": 332.0,
+    "w": 80.0,
+    "h": 60.0,
+    "type": "rect",
+    "color": "0E1A2B"
+   },
+   {
+    "x": 487.0,
+    "y": 343.0,
+    "w": 68.0,
+    "h": 36.0,
+    "type": "text",
+    "v": "Laser",
+    "size": 20.0,
+    "bold": false,
+    "serif": false,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 600.0,
+    "y": 344.0,
+    "w": 10.0,
+    "h": 40.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 710.0,
+    "y": 344.0,
+    "w": 10.0,
+    "h": 40.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 820.0,
+    "y": 344.0,
+    "w": 10.0,
+    "h": 40.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 930.0,
+    "y": 344.0,
+    "w": 10.0,
+    "h": 40.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 1040.0,
+    "y": 344.0,
+    "w": 10.0,
+    "h": 40.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 1140.0,
+    "y": 344.0,
+    "w": 10.0,
+    "h": 40.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 475.0,
+    "y": 445.0,
+    "w": 200.0,
+    "h": 52.0,
+    "type": "text",
+    "v": "Interrogator",
+    "size": 26.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 795.0,
+    "y": 445.0,
+    "w": 420.0,
+    "h": 52.0,
+    "type": "text",
+    "v": "Neighboring channels",
+    "size": 26.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "One passing wave can appear across many channels.",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "An interrogator sends laser light down the cable. Changes in the returning light encode deformation along successive fiber sections. A station measures ground motion at one location. The two instruments sense different quantities; nearby fiber channels can share both earthquake energy and noise."
+ },
+ {
+  "title": "Can a station model recover a small arrival?",
+  "dark": true,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Can a station model recover a small arrival?",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 65.0,
+    "y": 256.0,
+    "w": 350.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Station model",
+    "size": 49.0,
+    "bold": true,
+    "serif": true,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 65.0,
+    "y": 363.0,
+    "w": 67.0,
+    "h": 5.0,
+    "type": "rect",
+    "color": "1FB5C9"
+   },
+   {
+    "x": 65.0,
+    "y": 411.0,
+    "w": 340.0,
+    "h": 117.0,
+    "type": "text",
+    "v": "Learned frequency mask",
+    "size": 29.0,
+    "bold": false,
+    "serif": false,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 472.0,
+    "y": 256.0,
+    "w": 350.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Fiber data",
+    "size": 49.0,
+    "bold": true,
+    "serif": true,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 472.0,
+    "y": 363.0,
+    "w": 67.0,
+    "h": 5.0,
+    "type": "rect",
+    "color": "1FB5C9"
+   },
+   {
+    "x": 472.0,
+    "y": 411.0,
+    "w": 340.0,
+    "h": 117.0,
+    "type": "text",
+    "v": "Short recorded P arrivals",
+    "size": 29.0,
+    "bold": false,
+    "serif": false,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 889.0,
+    "y": 256.0,
+    "w": 350.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Question",
+    "size": 49.0,
+    "bold": true,
+    "serif": true,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 889.0,
+    "y": 363.0,
+    "w": 67.0,
+    "h": 5.0,
+    "type": "rect",
+    "color": "1FB5C9"
+   },
+   {
+    "x": 889.0,
+    "y": 411.0,
+    "w": 340.0,
+    "h": 117.0,
+    "type": "text",
+    "v": "Is the shape recovered?",
+    "size": 29.0,
+    "bold": false,
+    "serif": false,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "The test asks about waveform recovery on earthquakes from the same two fibers.",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "1FB5C9"
+   }
+  ],
+  "notes": "The assignment has two parts. First reproduce the released example to establish that inference is wired correctly. Then use openly available DAS data to test transfer. We distinguish replication of one prediction from replication of the original paper's entire scientific conclusion."
+ },
+ {
+  "title": "The released station example is reproducible.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "The released station example is reproducible.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 48.0,
+    "y": 218.095,
+    "w": 824.0,
+    "h": 301.81,
+    "type": "image",
+    "name": "reproduction.png"
+   },
+   {
+    "x": 880.0,
+    "y": 237.0,
+    "w": 360.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "$upstream",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "087886"
+   },
+   {
+    "x": 888.0,
+    "y": 361.0,
+    "w": 320.0,
+    "h": 75.0,
+    "type": "text",
+    "v": "relative peak error",
+    "size": 28.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "One published station trace · RN.BAVN vertical component",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "These are the measured station input and reconstructed output using the released checkpoint. The archived upstream comparison divided the largest absolute difference by the peak upstream prediction. This checks the adapter, sampling and reconstruction. It covers one trace; it says nothing yet about transfer to fiber."
+ },
+ {
+  "title": "Each earthquake supplies one controlled recovery task.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Each earthquake supplies one controlled recovery task.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 60.0,
+    "y": 236.0,
+    "w": 167.0,
+    "h": 6.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 60.0,
+    "y": 164.0,
+    "w": 90.0,
+    "h": 57.0,
+    "type": "text",
+    "v": "1",
+    "size": 40.0,
+    "bold": false,
+    "serif": true,
+    "color": "5B6B7C"
+   },
+   {
+    "x": 60.0,
+    "y": 275.0,
+    "w": 180.0,
+    "h": 86.0,
+    "type": "text",
+    "v": "P window",
+    "size": 27.0,
+    "bold": true,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 60.0,
+    "y": 385.0,
+    "w": 174.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Reference",
+    "size": 25.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 254.0,
+    "y": 236.0,
+    "w": 167.0,
+    "h": 6.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 254.0,
+    "y": 164.0,
+    "w": 90.0,
+    "h": 57.0,
+    "type": "text",
+    "v": "2",
+    "size": 40.0,
+    "bold": false,
+    "serif": true,
+    "color": "5B6B7C"
+   },
+   {
+    "x": 254.0,
+    "y": 275.0,
+    "w": 180.0,
+    "h": 86.0,
+    "type": "text",
+    "v": "Early window",
+    "size": 27.0,
+    "bold": true,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 254.0,
+    "y": 385.0,
+    "w": 174.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Background",
+    "size": 25.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 448.0,
+    "y": 236.0,
+    "w": 167.0,
+    "h": 6.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 448.0,
+    "y": 164.0,
+    "w": 90.0,
+    "h": 57.0,
+    "type": "text",
+    "v": "3",
+    "size": 40.0,
+    "bold": false,
+    "serif": true,
+    "color": "5B6B7C"
+   },
+   {
+    "x": 448.0,
+    "y": 275.0,
+    "w": 180.0,
+    "h": 86.0,
+    "type": "text",
+    "v": "Mix",
+    "size": 27.0,
+    "bold": true,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 448.0,
+    "y": 385.0,
+    "w": 174.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Set SNR",
+    "size": 25.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 642.0,
+    "y": 236.0,
+    "w": 167.0,
+    "h": 6.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 642.0,
+    "y": 164.0,
+    "w": 90.0,
+    "h": 57.0,
+    "type": "text",
+    "v": "4",
+    "size": 40.0,
+    "bold": false,
+    "serif": true,
+    "color": "5B6B7C"
+   },
+   {
+    "x": 642.0,
+    "y": 275.0,
+    "w": 180.0,
+    "h": 86.0,
+    "type": "text",
+    "v": "Pad",
+    "size": 27.0,
+    "bold": true,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 642.0,
+    "y": 385.0,
+    "w": 174.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Center clip",
+    "size": 25.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 836.0,
+    "y": 236.0,
+    "w": 167.0,
+    "h": 6.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 836.0,
+    "y": 164.0,
+    "w": 90.0,
+    "h": 57.0,
+    "type": "text",
+    "v": "5",
+    "size": 40.0,
+    "bold": false,
+    "serif": true,
+    "color": "5B6B7C"
+   },
+   {
+    "x": 836.0,
+    "y": 275.0,
+    "w": 180.0,
+    "h": 86.0,
+    "type": "text",
+    "v": "Denoise",
+    "size": 27.0,
+    "bold": true,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 836.0,
+    "y": 385.0,
+    "w": 174.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Predict mask",
+    "size": 25.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 1030.0,
+    "y": 236.0,
+    "w": 167.0,
+    "h": 6.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 1030.0,
+    "y": 164.0,
+    "w": 90.0,
+    "h": 57.0,
+    "type": "text",
+    "v": "6",
+    "size": 40.0,
+    "bold": false,
+    "serif": true,
+    "color": "5B6B7C"
+   },
+   {
+    "x": 1030.0,
+    "y": 275.0,
+    "w": 180.0,
+    "h": 86.0,
+    "type": "text",
+    "v": "Score",
+    "size": 27.0,
+    "bold": true,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 1030.0,
+    "y": 385.0,
+    "w": 174.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Crop center",
+    "size": 25.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "24 channels per aperture · 70 recorded samples in a 6,001-sample neural input",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "Read this pipeline left to right. The later window is our relatively clear field target. An earlier window supplies background. We scale it once for the whole aperture and add it back. Only observed center samples are scored. The same event never crosses from fitting into testing."
+ },
+ {
+  "title": "Turning down the volume earns a gain.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Turning down the volume earns a gain.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 50.0,
+    "y": 207.503,
+    "w": 766.0,
+    "h": 313.994,
+    "type": "image",
+    "name": "scalar.png"
+   },
+   {
+    "x": 840.0,
+    "y": 160.0,
+    "w": 390.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "$scalar_gain dB",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "087886"
+   },
+   {
+    "x": 852.0,
+    "y": 271.0,
+    "w": 360.0,
+    "h": 60.0,
+    "type": "text",
+    "v": "Ordinary gain",
+    "size": 28.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 840.0,
+    "y": 352.0,
+    "w": 390.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "$scalar_si dB",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "087886"
+   },
+   {
+    "x": 852.0,
+    "y": 467.0,
+    "w": 380.0,
+    "h": 65.0,
+    "type": "text",
+    "v": "Scale-invariant gain",
+    "size": 28.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Same waveform shape · 0 dB input · 145 test earthquakes",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "These traces use the same amplitude scale. The fitted multiplier preserves every turning point and every relative time. Ordinary gain improves because squared error rewards attenuation in a noisy mixture. Scale-invariant gain removes that degree of freedom. This is why the rest of the talk uses both scores."
+ },
+ {
+  "title": "Changing the metric changes the method ranking.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Changing the metric changes the method ranking.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 111.521,
+    "y": 137.0,
+    "w": 1056.957,
+    "h": 500.0,
+    "type": "image",
+    "name": "ranking.png"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Original controls and the development-tuned f–k filter · 145 earthquakes at 0 dB",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "A circle shows ordinary gain, and a diamond shows scale-invariant gain. Compare how far apart the two markers are for the scalar and the spatial filter. The head gives a small positive improvement on both. The original bandpass loses shape agreement. The development-tuned f–k filter improves both scores and changes the spatial comparison."
+ },
+ {
+  "title": "Shape recovery depends on the starting noise level.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Shape recovery depends on the starting noise level.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 147.857,
+    "w": 1160.0,
+    "h": 474.286,
+    "type": "image",
+    "name": "levels.png"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Holdout means for three controls · 145 earthquakes at each level",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "Read the horizontal axis as the input signal-to-noise ratio. The scalar stays at zero scale-invariant gain. F-k behaves differently as the mixture becomes clearer. The adapted head remains near the identity baseline in absolute terms. The complete tables include the other filters and event intervals."
+ },
+ {
+  "title": "Smaller events gained slightly less from adaptation.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Smaller events gained slightly less from adaptation.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 58.0,
+    "y": 204.242,
+    "w": 830.0,
+    "h": 347.515,
+    "type": "image",
+    "name": "magnitude.png"
+   },
+   {
+    "x": 902.0,
+    "y": 219.0,
+    "w": 310.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "$magnitude",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "087886"
+   },
+   {
+    "x": 909.0,
+    "y": 350.0,
+    "w": 300.0,
+    "h": 88.0,
+    "type": "text",
+    "v": "dB, small minus large",
+    "size": 28.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Paired head improvement at 0 dB · 95% event-bootstrap intervals",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "The bars are paired differences between the head and the released network, not total denoising gain. The intervals resample earthquakes within array. Both outer magnitude bins contain only Long Valley events. Source SNR and magnitude can covary, so this is a descriptive comparison within this sample."
+ },
+ {
+  "title": "More trainable weights delivered less gain here.",
+  "dark": true,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "More trainable weights delivered less gain here.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 65.0,
+    "y": 230.0,
+    "w": 365.0,
+    "h": 72.0,
+    "type": "text",
+    "v": "Released",
+    "size": 31.0,
+    "bold": false,
+    "serif": false,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 65.0,
+    "y": 331.0,
+    "w": 350.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "$zero",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "F0A202"
+   },
+   {
+    "x": 465.0,
+    "y": 230.0,
+    "w": 365.0,
+    "h": 72.0,
+    "type": "text",
+    "v": "Adapted head",
+    "size": 31.0,
+    "bold": false,
+    "serif": false,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 465.0,
+    "y": 331.0,
+    "w": 350.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "$head",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "F0A202"
+   },
+   {
+    "x": 870.0,
+    "y": 230.0,
+    "w": 365.0,
+    "h": 72.0,
+    "type": "text",
+    "v": "Decoder",
+    "size": 31.0,
+    "bold": false,
+    "serif": false,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 870.0,
+    "y": 331.0,
+    "w": 350.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "$decoder",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "F0A202"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Ordinary gain in dB · 145 test earthquakes at 0 dB",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "1FB5C9"
+   }
+  ],
+  "notes": "All three values use identical test mixtures. The larger variant updates the last decoder block as well as the head. Under the original budgets, the smaller adaptation wins. That does not show that extra parameters inherently hurt. Separate the architecture from the optimizer and its number of updates."
+ },
+ {
+  "title": "Stretching and background choice change the answer.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Stretching and background choice change the answer.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 64.0,
+    "y": 165.0,
+    "w": 535.0,
+    "h": 6.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 675.0,
+    "y": 165.0,
+    "w": 530.0,
+    "h": 6.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 65.0,
+    "y": 192.0,
+    "w": 510.0,
+    "h": 63.0,
+    "type": "text",
+    "v": "Time stretch",
+    "size": 38.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 676.0,
+    "y": 192.0,
+    "w": 545.0,
+    "h": 63.0,
+    "type": "text",
+    "v": "Independent background",
+    "size": 38.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 63.0,
+    "y": 285.0,
+    "w": 510.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "$stretch_si",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "087886"
+   },
+   {
+    "x": 70.0,
+    "y": 413.0,
+    "w": 530.0,
+    "h": 136.0,
+    "type": "text",
+    "v": "Head SI gain · factor $head_factor\n145 held-out earthquakes",
+    "size": 28.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 674.0,
+    "y": 285.0,
+    "w": 505.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "+$external_si",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "087886"
+   },
+   {
+    "x": 680.0,
+    "y": 413.0,
+    "w": 530.0,
+    "h": 136.0,
+    "type": "text",
+    "v": "Head SI gain · three recordings\nTwelve Ridgecrest earthquakes",
+    "size": 28.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Scale-invariant gain in dB at 0 dB input · additional independent fibers and days remain important.",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "Stretching changes apparent frequency. Only development folds chose the factor, separately for each model. The independent-noise panel controls the target earthquake and changes the background source. Interpret conditioning carefully: multiple windows from one recording share its noise regime."
+ },
+ {
+  "title": "The mask mostly passes the energetic bins.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "The mask mostly passes the energetic bins.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 55.0,
+    "y": 205.818,
+    "w": 780.0,
+    "h": 316.364,
+    "type": "image",
+    "name": "mask.png"
+   },
+   {
+    "x": 874.0,
+    "y": 237.0,
+    "w": 330.0,
+    "h": 114.0,
+    "type": "text",
+    "v": "$mask_original",
+    "size": 85.0,
+    "bold": false,
+    "serif": true,
+    "color": "087886"
+   },
+   {
+    "x": 880.0,
+    "y": 367.0,
+    "w": 332.0,
+    "h": 125.0,
+    "type": "text",
+    "v": "energy-weighted mask\non the original clip",
+    "size": 27.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "One prespecified held-out aperture · 0 dB input · original versus fourfold stretch",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "The plots show the released signal mask only on frames overlapping the actual observation. The numerical summary weights each bin by the input energy. Large weights near one explain how the prediction can be almost the input on this example. This is a mechanism illustration on one event, not population-wide attribution."
+ },
+ {
+  "title": "The evidence stops at these measured windows.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "The evidence stops at these measured windows.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 67.0,
+    "y": 212.0,
+    "w": 500.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Supported",
+    "size": 51.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 67.0,
+    "y": 338.0,
+    "w": 505.0,
+    "h": 176.0,
+    "type": "text",
+    "v": "Modest same-fiber waveform improvement across controlled mixtures.",
+    "size": 35.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 690.0,
+    "y": 212.0,
+    "w": 500.0,
+    "h": 80.0,
+    "type": "text",
+    "v": "Still open",
+    "size": 51.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 690.0,
+    "y": 338.0,
+    "w": 500.0,
+    "h": 176.0,
+    "type": "text",
+    "v": "Continuous detection, analyst polarities and transfer to unseen fibers.",
+    "size": 35.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Reference arrivals retain field noise.",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "We can defend the measured differences on these mixtures, same-site earthquakes and explicitly specified metrics. We do not have independent analyst labels or continuous-stream false-alarm rates. A deployment claim needs longer data, additional fibers and independent noise days."
+ },
+ {
+  "title": "Three observations explain the result.",
+  "dark": true,
+  "items": [
+   {
+    "x": 63.0,
+    "y": 81.0,
+    "w": 1150.0,
+    "h": 86.0,
+    "type": "text",
+    "v": "Amplitude can mislead.",
+    "size": 56.0,
+    "bold": true,
+    "serif": true,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 67.0,
+    "y": 168.0,
+    "w": 1130.0,
+    "h": 65.0,
+    "type": "text",
+    "v": "Shape needs its own score.",
+    "size": 30.0,
+    "bold": false,
+    "serif": false,
+    "color": "1FB5C9"
+   },
+   {
+    "x": 63.0,
+    "y": 267.0,
+    "w": 1150.0,
+    "h": 86.0,
+    "type": "text",
+    "v": "Adaptation helped a little.",
+    "size": 56.0,
+    "bold": true,
+    "serif": true,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 67.0,
+    "y": 354.0,
+    "w": 1130.0,
+    "h": 65.0,
+    "type": "text",
+    "v": "Small events did not benefit more.",
+    "size": 30.0,
+    "bold": false,
+    "serif": false,
+    "color": "1FB5C9"
+   },
+   {
+    "x": 63.0,
+    "y": 453.0,
+    "w": 1150.0,
+    "h": 86.0,
+    "type": "text",
+    "v": "Context matters.",
+    "size": 56.0,
+    "bold": true,
+    "serif": true,
+    "color": "F6F3EE"
+   },
+   {
+    "x": 67.0,
+    "y": 540.0,
+    "w": 1130.0,
+    "h": 65.0,
+    "type": "text",
+    "v": "Background and apparent frequency change recovery.",
+    "size": 30.0,
+    "bold": false,
+    "serif": false,
+    "color": "1FB5C9"
+   }
+  ],
+  "notes": "Close by returning to the turning-down-the-volume example. Ask what a model changed, what the chosen metric rewards, and how many independent units support the conclusion. These three questions also explain why larger gains on a new processing condition must be checked on held-out earthquakes."
+ },
+ {
+  "title": "allow 30–45 seconds · Earthquake IDs define the split.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Earthquake IDs define the split.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 210.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 196.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Training · 12 Long Valley and 12 Ridgecrest",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 323.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 309.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Validation and pilot · three per site in each group",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 436.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 422.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Original test · 133 Long Valley and 12 Ridgecrest",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Backup · supporting evidence",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "Point out that the test is disjoint by ID but shares fibers; the historical test results were already known."
+ },
+ {
+  "title": "allow 30–45 seconds · Each metric answers a different question.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Each metric answers a different question.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 210.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 196.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Ordinary gain · change in squared reference error",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 323.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 309.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "SI-SDR gain · shape after optimal rescaling",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 436.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 422.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Signed CC, local peak and first excursion · complementary checks",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Backup · supporting evidence",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "A sign reversal preserves SI-SDR. A matched automatic pick is not a manual arrival or a field detection."
+ },
+ {
+  "title": "allow 30–45 seconds · Every development earthquake receives an out-of-fold prediction.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "Every development earthquake receives an out-of-fold prediction.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 210.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 196.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Released · $cv_zero dB",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 323.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 309.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Head · $cv_head dB",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 436.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 422.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Decoder · $cv_decoder dB",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Backup · supporting evidence",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "Original development OOF gains at zero dB. Within each outer fold separate fit, stopping and scoring events."
+ },
+ {
+  "title": "allow 30–45 seconds · The external noise cuts are traceable.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "The external noise cuts are traceable.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 210.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 196.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "SCEDC Ridgecrest · hourly SEG-Y objects",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 323.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 309.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Trace rows 400–423 · byte-range SHA-256 manifests",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 436.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 422.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Detrend, differentiate, common-mode subtract, filter, resample",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Backup · supporting evidence",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "Open the manifest for the exact samples, UTC times and checksums. Snippets from the same source hour are associated observations."
+ },
+ {
+  "title": "allow 30–45 seconds · One command rebuilds the study.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "One command rebuilds the study.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 210.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 196.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "make reproduce",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 323.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 309.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "make test",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 436.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 422.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "make check",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Backup · supporting evidence",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "The build regenerates the study and checks traceable claims against CSV-backed sources. Read the README for system dependencies."
+ },
+ {
+  "title": "allow 30–45 seconds · The study builds on published open data.",
+  "dark": false,
+  "items": [
+   {
+    "x": 60.0,
+    "y": 43.0,
+    "w": 1160.0,
+    "h": 94.0,
+    "type": "text",
+    "v": "The study builds on published open data.",
+    "size": 52.0,
+    "bold": true,
+    "serif": true,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 210.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 196.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Steinberg et al. · released seisDAE benchmark",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 323.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 309.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Li et al. · DAS focal mechanisms and P-phase records",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 70.0,
+    "y": 436.0,
+    "w": 8.0,
+    "h": 46.0,
+    "type": "rect",
+    "color": "087886"
+   },
+   {
+    "x": 100.0,
+    "y": 422.0,
+    "w": 1080.0,
+    "h": 83.0,
+    "type": "text",
+    "v": "Zhu et al., Heuel & Friederich, Tibi et al. · seismic denoising",
+    "size": 33.0,
+    "bold": false,
+    "serif": false,
+    "color": "0E1A2B"
+   },
+   {
+    "x": 62.0,
+    "y": 652.0,
+    "w": 1160.0,
+    "h": 44.0,
+    "type": "text",
+    "v": "Backup · supporting evidence",
+    "size": 21.0,
+    "bold": false,
+    "serif": false,
+    "color": "5B6B7C"
+   }
+  ],
+  "notes": "The full report bibliography gives the source DOIs, data record, STEAD credit and the journal publication dates."
+ }
+]

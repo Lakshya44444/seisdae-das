@@ -1,0 +1,85 @@
+# Viva notes
+
+1. **What is the scientific question?** Does a station-trained denoiser recover a recorded fiber P arrival, and which comparisons support that claim?
+
+2. **Which part meets the reproduction requirement?** The released station example is run through the local adapter and compared against the upstream predictor.
+
+3. **Did you reproduce the whole paper?** No. The implementation check covers one published example, not the paper’s full population or endpoints.
+
+4. **Why would a station model transfer at all?** Both sensors see seismic wave energy with time-frequency structure. Sensor response and noise can still differ.
+
+5. **What physical quantity does DAS sense?** Axial deformation along the fiber, with sensitivity dependent on direction and coupling.
+
+6. **Why align adjacent channels?** A coherent arrival moves along the aperture. Correcting timing shifts makes spatial comparisons more meaningful.
+
+7. **Why select a high-SNR aperture?** It gives a more interpretable field reference, at the cost of selecting relatively visible signals.
+
+8. **Is your reference clean?** No. It is a recorded P window with residual background. We measure recovery of that window.
+
+9. **Why mix with one scale per gather?** It sets aperture energy SNR while retaining relative channel strengths.
+
+10. **Does the pre-P window guarantee noise independence?** No. It shares both the acquisition and the event time; the external-noise tests probe this weakness.
+
+11. **Why pad so much?** The released neural architecture expects a fixed input length much greater than the real window.
+
+12. **Does stretching add information?** No. It changes sampling and the apparent frequencies presented to the network.
+
+13. **What is the STFT?** A sequence of overlapping Fourier transforms that localize frequency content in time.
+
+14. **What exactly does the model predict?** Two time-frequency mask probabilities. The signal mask multiplies the noisy complex coefficients.
+
+15. **Why keep the complex phase?** It carries timing information necessary to reconstruct a time-domain waveform.
+
+16. **What does the head learn?** A shared linear mapping from frozen final features to the two mask logits.
+
+17. **Why did the decoder lose?** It underperformed under the particular training and stopping budgets. The comparison cannot isolate capacity from optimization.
+
+18. **Why not train from scratch?** We trained a compact residual U-Net on two apertures per event and scored held-out events in five folds. Its different training population limits comparison with the fixed-test model.
+
+19. **Why is the scalar better?** It can reduce squared residual energy through attenuation at low input SNR, even though waveform shape is identical.
+
+20. **How can SI-SDR miss a sign error?** The optimal projection coefficient can be negative. Signed correlation and first-excursion checks complement it.
+
+21. **Why report peak ratio?** Scale invariance discards amplitude information; the peak ratio retains a local amplitude diagnostic.
+
+22. **Can sign agreement validate a focal mechanism?** No. This automated threshold proxy lacks analyst polarity labels and is sensitive to noise and timing.
+
+23. **Why can a bandpass hurt?** The source is already bandlimited, arrival windows are short and filter boundaries affect the center.
+
+24. **Why try an f-k filter?** It uses spatial coherence through apparent velocity, which a single-trace network cannot directly exploit.
+
+25. **What is an SVD denoiser?** A low-rank approximation retaining dominant modes across channels and time. Strong noise can also be low rank.
+
+26. **Why a median stack?** It is a simple robust estimate of a common arrival; it sacrifices channel-specific waveform structure.
+
+27. **Why distinguish gain from picking?** Residual energy, shape and onset timing answer different scientific questions.
+
+28. **Is pick recovery the detection recall?** No. Every input already contains a selected arrival, and the reference is another automatic pick.
+
+29. **Why bootstrap by event?** Channels from one earthquake are correlated. Treating them as separate independent samples understates uncertainty.
+
+30. **Could the event interval still be optimistic?** Yes. Nearby events may belong to one sequence. Time-distance grouping tests sensitivity to dependence.
+
+31. **Are your clusters known families?** No. They are operational groups connected by fixed proximity thresholds.
+
+32. **Is the test independent?** Its event IDs are disjoint from fitting, but it shares fibers, may share families, and its earlier results were known.
+
+33. **Why not split by channel?** Closely related channels would reach both training and testing.
+
+34. **What happens inside CV?** Fit on one subset, stop on a separate subset, and predict the held-out outer events.
+
+35. **Why hold the magnitude question to one comparison?** One prespecified contrast is easier to interpret than many uncorrected post-hoc subgroup comparisons.
+
+36. **Do smaller earthquakes benefit more?** The original head helped both extreme bins, but its increment was smaller in the lowest bin. Both extremes are Long Valley only.
+
+37. **Can the external-noise result generalize?** Only to the sampled origins and target set. Multiple snippets from one recording share its conditions.
+
+38. **Does faster picking guarantee better detection?** No. Lower timing error among matched picks can coexist with misses and false alarms.
+
+39. **What is the decisive next dataset?** Longer recordings on unseen fibers with several independent noise days and analyst-checked arrivals.
+
+40. **What result would change your conclusion?** Consistent held-out improvements in shape, amplitude and detection across unseen fibers and independent days would support broader deployment.
+
+## Numbers to defend
+
+At 0 dB on the fixed 145-event benchmark, the original head gives $head_original dB and the stretch-selected head gives $head_stretch dB ordinary / SI-SDR gain. The scratch network gives $scratch dB on the separate 181-event OOF design. Keep those cohorts separate.
