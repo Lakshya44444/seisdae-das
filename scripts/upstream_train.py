@@ -19,6 +19,7 @@ def main():
     p.add_argument("--epochs", type=int, default=1)
     p.add_argument("--count", type=int, default=24)
     p.add_argument("--batch", type=int, default=2)
+    p.add_argument("--name", default="local_conventional", help="Model name written by the trainer")
     a = p.parse_args()
     root = a.checkout.resolve()
     if (
@@ -33,7 +34,7 @@ def main():
     if min(a.epochs, a.batch) < 1 or a.count < 5 * a.batch:
         p.error("Need at least five batches to populate the validation split.")
     changes = {
-        "filename": "local_conventional",
+        "filename": a.name,
         "num_signals": a.count,
         "epochs": a.epochs,
         "workers": 1,
@@ -52,7 +53,7 @@ def main():
     for line in (root / "model_parfile").read_text().splitlines():
         key = line.partition("=")[0].strip()
         lines.append(f"{key} = {changes[key]}" if key in changes else line)
-    parfile = root / "local_conventional.par"
+    parfile = root / f"{a.name}.par"
     parfile.write_text("\n".join(lines) + "\n")
     os.environ.update(
         TF_USE_LEGACY_KERAS="1",
