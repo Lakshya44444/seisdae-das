@@ -8,7 +8,7 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 
-from src.v4 import build, das, methods
+from src.v4 import build, catalog, das, methods
 from src.v4.evaluate import pairs
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +53,14 @@ class Geometry(unittest.TestCase):
         with mock.patch.object(das, "das_info", lambda: gap):
             with self.assertRaises(KeyError):
                 das.geometry()
+
+
+class Catalogue(unittest.TestCase):
+    def test_distance_filter(self):
+        d = pd.DataFrame(dict(event_id=["near", "edge", "far"], latitude=[35.70, 36.20, 61.0],
+                              longitude=[-117.70, -117.736, -150.0]))
+        kept = catalog.within(d, 35.652, -117.736, 0.6)
+        self.assertEqual(list(kept.event_id), ["near", "edge"])
 
 
 class Dataset(unittest.TestCase):
