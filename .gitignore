@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+runs/
+data/raw/
+data/conventional/
+vendor/
+
+reports_v3/.~lock.*
+reports_v3/*.tmp
