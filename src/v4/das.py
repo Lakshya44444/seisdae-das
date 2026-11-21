@@ -175,16 +175,28 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 6371.0 * 2 * np.arcsin(np.sqrt(a))
 
 
+def located_runs(index_values, min_length=1):
+    """Runs of consecutive file rows that have coordinates: (first_row, last_row, length)."""
+    rows = np.unique(np.asarray(index_values, dtype=int))
+    breaks = np.flatnonzero(np.diff(rows) != 1)
+    starts, ends = np.r_[rows[0], rows[breaks + 1]], np.r_[rows[breaks], rows[-1]]
+    return [(int(a), int(b), int(b - a + 1)) for a, b in zip(starts, ends) if b - a + 1 >= min_length]
+
+
 def geometry():
     """Block centre (lat, lon) and channel spacing in metres.
 
-    Assumes row i of the SEG-Y file is row i of das_info.csv; --inspect prints
-    both counts so this can be confirmed.
+    das_info.csv lists only located channels; its index column gives the
+    SEG-Y trace row of each one. Every row of the block must be located.
     """
     info = das_info()
     lat, lon = _coordinate_columns(info)
     rows = block_rows()
-    b = info.iloc[rows]
+    b = info.set_index(CFG["channels"]["info_index_column"]).reindex(rows)
+    missing = [r for r, ok in zip(rows, b[lat].notna()) if not ok]
+    if missing:
+        raise KeyError(f"File rows without coordinates in das_info.csv: {missing[:10]}"
+                       f"{' ...' if len(missing) > 10 else ''}. Choose channels.first_row inside a located run.")
     step = haversine_km(b[lat].values[:-1], b[lon].values[:-1], b[lat].values[1:], b[lon].values[1:]) * 1000
     spacing = CFG["channels"]["spacing_m"] or float(np.median(step))
     return float(b[lat].mean()), float(b[lon].mean()), spacing
@@ -208,10 +220,13 @@ def inspect(day):
         header, _ = _get(url, a, a + TRACE_HEADER - 1)
         print(f"row {row} header time (year, day, hour, min, sec):", _trace_time(header))
     info = das_info()
+    column = CFG["channels"]["info_index_column"]
     print("das_info.csv rows:", len(info), "columns:", list(info.columns))
-    print(info.iloc[CFG["channels"]["first_row"]:CFG["channels"]["first_row"] + 3].to_string())
+    print(f"located file rows ({column}): {info[column].min()} to {info[column].max()}")
+    runs = located_runs(info[column], CFG["channels"]["count"])
+    print(f"runs of >= {CFG['channels']['count']} consecutive located rows (first, last, length):", runs)
     try:
-        print("block centre and spacing:", geometry())
+        print("block rows", block_rows()[0], "-", block_rows()[-1], "centre and spacing:", geometry())
     except KeyError as error:
         print(error)
     x = read_window(hour + pd.Timedelta(minutes=10), block_rows())

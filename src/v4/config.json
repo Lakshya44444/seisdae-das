@@ -11,6 +11,7 @@
     "first_row": 400,
     "count": 96,
     "spacing_m": null,
+    "info_index_column": "index",
     "info_lat_column": null,
     "info_lon_column": null
   },
