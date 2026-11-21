@@ -64,6 +64,7 @@ def split_by_hour(start, n_raw):
 
 
 _SESSION = requests.Session()
+_SESSION.mount("https://", requests.adapters.HTTPAdapter(pool_connections=4, pool_maxsize=64))
 _SIZES = {}
 
 
@@ -98,9 +99,10 @@ def n_traces(hour):
     return _SIZES[url]
 
 
-def read_raw(start, seconds, rows, workers=8):
+def read_raw(start, seconds, rows, workers=None):
     """Raw 250 Hz samples, shape (len(rows), seconds*250), may span two hour files."""
     n_raw = int(round(seconds * RAW_HZ))
+    workers = workers or CFG["archive"].get("download_workers", 8)
     parts = []
     for hour, first, count in split_by_hour(start, n_raw):
         if n_traces(hour) < max(rows) + 1:
