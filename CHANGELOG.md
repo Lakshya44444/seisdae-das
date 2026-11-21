@@ -90,3 +90,7 @@ No V4 results are reported here. Run the steps in README_v4.md; `results_v4/summ
 ### V4 download size — 21 November 2026
 
 During the first full download, candidates ranked 200–237 (M1.0–1.9) were almost all below the selection SNR. To save time, `strong_candidates` was lowered from 450 to 240 and `noise_windows_per_day` from 8 to 6. Both are data-volume settings. No validation or test score had been computed when they were changed.
+
+### V4 event selection rule — 22 November 2026
+
+The first rule (at least 50% of channels with SNR >= 15 dB, overlapping events excluded) kept 3 train, 0 validation and 1 test earthquakes out of 273 downloaded. `python -m src.v4.build --stats` listed the event counts for 12 alternative rules. No denoising score existed at this point. The chosen rule is: at least 30% of channels with SNR >= 10 dB, overlapping catalogued events allowed. It gives 46 train, 8 validation and 24 test earthquakes and 2142 training traces. Training export now uses every qualifying channel (stride 1). Synthetic-test scores use only channels whose recorded reference has SNR >= 10 dB. Validation uses two noise draws per event.

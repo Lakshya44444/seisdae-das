@@ -36,8 +36,9 @@
     "strong_candidates": 240,
     "weak_candidates": 120,
     "weak_magnitude": [0.5, 1.6],
-    "strong_snr_db": 15.0,
-    "strong_min_channel_fraction": 0.5,
+    "strong_snr_db": 10.0,
+    "strong_min_channel_fraction": 0.3,
+    "allow_overlap": true,
     "weak_snr_db": [3.0, 12.0],
     "noise_windows_per_day": 6,
     "noise_attempts_per_day": 60
@@ -49,12 +50,14 @@
     "test": [4]
   },
   "export": {
-    "channel_stride": 2,
+    "channel_stride": 1,
     "noise_channel_stride": 4
   },
   "evaluation": {
     "levels_db": [-10, -5, 0, 5, 10],
     "noise_draws": 2,
+    "validation_noise_draws": 2,
+    "score_channel_snr_db": 10.0,
     "bandpass_hz": [[1, 10], [1, 20], [2, 30], [0.5, 45]],
     "fk_velocity_m_s": [250, 500, 1000, 2000],
     "scalar_grid": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
