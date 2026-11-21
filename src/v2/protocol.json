@@ -1,0 +1,10 @@
+{
+  "seed": 2026, "bootstrap_draws": 5000, "levels": [-5,0,5,10],
+  "final_test": "Evaluate the validation-selected final decoder checkpoint once per held-out event and SNR. Report the fixed legacy head and decoder regardless of ordering.",
+  "decoder": "Unfreeze last decoder convolution, BN affine parameters and head. Freeze BN moving statistics. Train on every fourth channel, batch 32 traces, Adam 0.00003, at most 16 epochs, patience 4, minimize validation soft-mask cross entropy including epoch 0.",
+  "cv": "3 array-balanced event folds over development events, with 2 stopping events per array from the other folds. No pilot or test.",
+  "ablations": "Six original validation events. No settings selected by ablation scores. Four mixture levels; fixed legacy head for context, noise and aperture comparisons.",
+  "size": "2,6,12,24 training earthquakes, equal numbers per array, seeds 2026 through 2030; validation-selected legacy-head optimizer.",
+  "padding": ["zero","reflect","tile","noise","stretch4"],
+  "noise": ["original","other_event","other_block","continuous_if_available"]
+}
