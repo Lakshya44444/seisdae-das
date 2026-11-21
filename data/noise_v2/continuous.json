@@ -1,0 +1,159 @@
+{
+  "url": "https://scedc-pds.s3.us-west-2.amazonaws.com/Ridgecrest_DAS/SEG-Y/hourly/2020062417.segy",
+  "start_utc": "2020-06-24T17:10:00Z",
+  "duration_s": 30,
+  "source_hz": 250,
+  "output_hz": 100,
+  "trace_rows": [
+    400,
+    423
+  ],
+  "sample_start": 150000,
+  "bytes_fetched": 720000,
+  "segments": [
+    {
+      "trace_row": 400,
+      "start_byte": 1440699840,
+      "end_byte": 1440729839,
+      "sha256": "a9520827b5ed6697d4103d69d9e25b1ba57f28593ae4eb2a0d5e84838904d676"
+    },
+    {
+      "trace_row": 401,
+      "start_byte": 1444300080,
+      "end_byte": 1444330079,
+      "sha256": "b488c66e137c4300d3a06d41692988b168b9d983febcdd97f948820868b74fcf"
+    },
+    {
+      "trace_row": 402,
+      "start_byte": 1447900320,
+      "end_byte": 1447930319,
+      "sha256": "b15399f28887465c2bf1e776032520922be4e0f3ab7a63751ef35d45c3d76a81"
+    },
+    {
+      "trace_row": 403,
+      "start_byte": 1451500560,
+      "end_byte": 1451530559,
+      "sha256": "d7ed0721756a6079885b4096a04ec08e399af684a23d987d46217804208cd977"
+    },
+    {
+      "trace_row": 404,
+      "start_byte": 1455100800,
+      "end_byte": 1455130799,
+      "sha256": "fef583ba3232c9f8c876020566720ff1cb3cc85b3c31d6cae35595142da6cc7e"
+    },
+    {
+      "trace_row": 405,
+      "start_byte": 1458701040,
+      "end_byte": 1458731039,
+      "sha256": "3220743e975e686607c6d4be57134c0f8c828d8fdc573786bb2a471f611acf16"
+    },
+    {
+      "trace_row": 406,
+      "start_byte": 1462301280,
+      "end_byte": 1462331279,
+      "sha256": "723512da09d6b012820acdf2002d4967c18471b122b87b478e81a288afca83d2"
+    },
+    {
+      "trace_row": 407,
+      "start_byte": 1465901520,
+      "end_byte": 1465931519,
+      "sha256": "0a71126420622b4e6d7151bbff58546d97311f9929f4d248270f271db4703dd3"
+    },
+    {
+      "trace_row": 408,
+      "start_byte": 1469501760,
+      "end_byte": 1469531759,
+      "sha256": "06a3f74c7504d5685d6c2efcc494cc049e59213c782af61e1412b292819d742c"
+    },
+    {
+      "trace_row": 409,
+      "start_byte": 1473102000,
+      "end_byte": 1473131999,
+      "sha256": "f7a35c7a5218038ab4c567d5e027239544085430b6b94a0f758dfda25250b949"
+    },
+    {
+      "trace_row": 410,
+      "start_byte": 1476702240,
+      "end_byte": 1476732239,
+      "sha256": "527bf5c07b56a4e8f5b0f02529d07d7411cbf8ddff11851e81ae3c6cc4f04c66"
+    },
+    {
+      "trace_row": 411,
+      "start_byte": 1480302480,
+      "end_byte": 1480332479,
+      "sha256": "3be862c05ec794c1ce87f1d0ff657245d705f189307d055c21d94fb75b329849"
+    },
+    {
+      "trace_row": 412,
+      "start_byte": 1483902720,
+      "end_byte": 1483932719,
+      "sha256": "0174a535f07df6f2fed12a1c5416782d4cd8c3a08c83fbc37b7c33299bd787de"
+    },
+    {
+      "trace_row": 413,
+      "start_byte": 1487502960,
+      "end_byte": 1487532959,
+      "sha256": "f81c96acf4a94f3272d10c4e01f69f8c069ff142f82622374821e525dfe3eeb8"
+    },
+    {
+      "trace_row": 414,
+      "start_byte": 1491103200,
+      "end_byte": 1491133199,
+      "sha256": "51bc0b2e6dc5cea8630bf3ec5e9b3df2314339452778884856020bd7a5474dc2"
+    },
+    {
+      "trace_row": 415,
+      "start_byte": 1494703440,
+      "end_byte": 1494733439,
+      "sha256": "677df6d999212afeacb01ea8c30c7f44c00e1544aa5b7b56a9f7e43568dc601c"
+    },
+    {
+      "trace_row": 416,
+      "start_byte": 1498303680,
+      "end_byte": 1498333679,
+      "sha256": "5670d10f94fc74cc061284c5c0454af06095a4de382758e640ea9d928808cbf8"
+    },
+    {
+      "trace_row": 417,
+      "start_byte": 1501903920,
+      "end_byte": 1501933919,
+      "sha256": "461d455e40528af3d768326ef1066cc94dc3bb3d17779ed36c3cff693f55cdd7"
+    },
+    {
+      "trace_row": 418,
+      "start_byte": 1505504160,
+      "end_byte": 1505534159,
+      "sha256": "be368ef74ab14fbc992c88bda73b9e517c443849b8db26ffeaf4519ba36369d3"
+    },
+    {
+      "trace_row": 419,
+      "start_byte": 1509104400,
+      "end_byte": 1509134399,
+      "sha256": "dcf720c4ca61df8fa3452449527a31984d194a1ec46e3270d026fab18559d968"
+    },
+    {
+      "trace_row": 420,
+      "start_byte": 1512704640,
+      "end_byte": 1512734639,
+      "sha256": "d5d3a7d1ca1bf3be6653dbd027c13a48a8efa7505e314e2b34c75ac85d8bc065"
+    },
+    {
+      "trace_row": 421,
+      "start_byte": 1516304880,
+      "end_byte": 1516334879,
+      "sha256": "04f203f9a55f7e5b9fa9694f2cea91e9b9ba69c6d8b68581a6a6a5c28753e83e"
+    },
+    {
+      "trace_row": 422,
+      "start_byte": 1519905120,
+      "end_byte": 1519935119,
+      "sha256": "710b2aa39d12c39d2c2e822fe9dc8cc214a7a54d959d83e664cadad77e7944f8"
+    },
+    {
+      "trace_row": 423,
+      "start_byte": 1523505360,
+      "end_byte": 1523535359,
+      "sha256": "ba1ccb3e654d745c38d93b0498e52f54fcae180f60d823b8693ef205188f91de"
+    }
+  ]
+}
