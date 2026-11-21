@@ -42,14 +42,15 @@ class Geometry(unittest.TestCase):
         self.assertEqual(das.located_runs([5, 6, 7, 10, 11, 20], 2), [(5, 7, 3), (10, 11, 2)])
 
     def test_geometry_uses_index_column(self):
-        rows = np.r_[300:350, 400:600]
+        first = das.block_rows()[0]
+        rows = np.r_[first - 100:first - 50, first - 10:first + 200]
         info = pd.DataFrame(dict(index=rows, latitude=35.0 + 0 * rows, longitude=-117.0 + rows * 1e-4,
                                  elevation_m=0.0))
         with mock.patch.object(das, "das_info", lambda: info):
             lat, lon, dx = das.geometry()
-        self.assertAlmostEqual(lon, -117.0 + np.mean(range(400, 496)) * 1e-4, places=9)
+        self.assertAlmostEqual(lon, -117.0 + np.mean(das.block_rows()) * 1e-4, places=9)
         self.assertAlmostEqual(dx, 9.1, delta=0.1)
-        gap = info[(info["index"] < 420) | (info["index"] > 430)]
+        gap = info[(info["index"] < first + 20) | (info["index"] > first + 30)]
         with mock.patch.object(das, "das_info", lambda: gap):
             with self.assertRaises(KeyError):
                 das.geometry()
