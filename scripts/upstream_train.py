@@ -20,6 +20,7 @@ def main():
     p.add_argument("--count", type=int, default=24)
     p.add_argument("--batch", type=int, default=2)
     p.add_argument("--name", default="local_conventional", help="Model name written by the trainer")
+    p.add_argument("--threads", type=int, default=2, help="TensorFlow intra-op CPU threads")
     a = p.parse_args()
     root = a.checkout.resolve()
     if (
@@ -57,7 +58,7 @@ def main():
     parfile.write_text("\n".join(lines) + "\n")
     os.environ.update(
         TF_USE_LEGACY_KERAS="1",
-        TF_NUM_INTRAOP_THREADS="2",
+        TF_NUM_INTRAOP_THREADS=str(a.threads),
         TF_NUM_INTEROP_THREADS="1",
         MPLBACKEND="Agg",
     )
