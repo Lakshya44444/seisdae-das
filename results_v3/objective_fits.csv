@@ -1,0 +1,13 @@
+fold,method,params,steps
+1,Head / mask CE,16,144
+1,Head / waveform NMSE,16,144
+1,Decoder / mask CE,608,144
+1,Decoder / waveform NMSE,608,144
+2,Head / mask CE,16,144
+2,Head / waveform NMSE,16,144
+2,Decoder / mask CE,608,144
+2,Decoder / waveform NMSE,608,144
+3,Head / mask CE,16,144
+3,Head / waveform NMSE,16,144
+3,Decoder / mask CE,608,144
+3,Decoder / waveform NMSE,608,144

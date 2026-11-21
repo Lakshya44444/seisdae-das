@@ -1,0 +1,7 @@
+event_id,array,noise_event,continuous_start_index
+73563870,longvalley,73640380,
+73640380,longvalley,73497300,
+73497300,longvalley,73563870,
+40060144,ridgecrest,39875135,500.0
+39924543,ridgecrest,40060144,1300.0
+39875135,ridgecrest,39924543,2100.0

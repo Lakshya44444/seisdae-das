@@ -1,0 +1,5 @@
+run,epoch,train_loss,validation_loss
+upstream_example,1,0.6707,0.6875
+stead_fdsn_pilot,1,0.7473,0.6917
+stead_fdsn_pilot,2,0.6946,0.6869
+stead_fdsn_pilot,3,0.6564,0.6769
