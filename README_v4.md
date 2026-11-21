@@ -36,6 +36,8 @@ If any check fails, fix `src/v4/config.json` (or the code) before continuing.
 
 Run all commands from the repository root. Python 3.12 is required by the pinned TensorFlow.
 
+**Python 3.13 alternative.** The pinned TensorFlow 2.16.2 has no Python 3.13 build. With only Python 3.13 installed, use `requirements-py313.txt` instead (TensorFlow 2.20 with tf-keras 2.20). V1–V3 numbers were verified with the pinned versions, not with this environment. Record the installed versions (`pip freeze > results_v4/environment.txt`) next to the V4 results.
+
 **0. Environment (once).** Create a virtual environment, install `requirements.txt`, and check out the original code:
 
 ```
