@@ -75,3 +75,14 @@ The previous V3 archive ended at `src/v3/mechanism.py`. Its preserved tables and
 | Fresh scientific rerun | `SEISDAE_JOBS=4 make reproduce`; after an interrupted session the remaining V2 and V3 module invocations were resumed in the same fresh working copy. `python -m src.verify NEW/results_v3 --v3 --expected RELEASE/results_v3` | All 31 V3 CSV tables and both numerical NPZ archives matched the released values. The pinned STEAD reference spectrum was separately rebuilt from its verified source. Both training experiments were independently refitted. All twelve notebooks executed successfully. |
 | Original data extraction | `python -m src.v3.multi_data`; `python -m src.data --raw data/raw/CaltechDATA --out runs/prepared-from-source`; `python -m src.v3.noise --fetch`; `python -m src.v3.stead` | Source TAR verified by its published MD5. Both prepared-aperture NPZs and both primary metadata tables matched. Three downloaded SCEDC cuts reproduced the packaged arrays exactly. Regenerated STEAD spectrum CSV matched byte-for-byte. |
 | Delivered copy | `python scripts/package_release.py --check`; `make test check smoke` | The downloaded ZIP matched the built ZIP byte-for-byte. Its extracted contents passed the package check, all 24 tests, the document consistency check and the smoke check on Linux. Native Windows execution, a Docker build and hosted GitHub Actions were not exercised. |
+
+## V4 pipeline (code only, not yet run) — 21 November 2026
+
+| Change | Reason |
+|---|---|
+| New `src/v4/` pipeline on continuous Ridgecrest DAS (SCEDC AWS), 60 s / 6,001-sample windows, day-separated train/validation/test | The V1–V3 input was a 0.7 s snippet zero-padded to 60 s; it touches 3 of 121 STFT frames of the released model. |
+| seisDAE trained from scratch on DAS signal and noise with the pinned original trainer | V3 adapted at most 608 parameters of a station model. |
+| `scripts/upstream_train.py --name` | Lets the DAS model be saved under its own name. |
+| `tests/test_v4.py` (11 offline tests) | Verifies byte offsets against V3 downloads, splits, export format, mixing, SI invariance, f-k and STFT identity. |
+
+No V4 results are reported here. Run the steps in README_v4.md; `results_v4/summary.md` is generated from the CSV files.

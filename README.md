@@ -1,5 +1,7 @@
 # Can a station denoiser recover fiber-optic earthquake arrivals?
 
+> **V4 (in progress):** seisDAE trained and tested on 60 s continuous Ridgecrest DAS windows. See [README_v4.md](README_v4.md) for why and how. V3 results below are unchanged.
+
 We reproduced the released seisDAE station example, then tested the model on recorded DAS P arrivals. A scalar control exposes a pitfall: lowering amplitude earns ordinary SNR gain with identical waveform shape. On the fixed test the development-selected stretch improves shape, while a tuned spatial filter gives an even larger scale-invariant improvement at 0 dB. The 181-event cross-fitting experiment tests a different population.
 
 ![One recorded mixture and its attenuated copy](figures_v3/scalar.png)

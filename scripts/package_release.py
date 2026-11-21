@@ -11,7 +11,7 @@ MANIFEST = "SHA256SUMS.txt"
 REQUIRED = set("""__init__.py boundary.py crossfit.py deck.py experiments.py extra_plots.py mechanism.py
 multi_data.py noise.py objective.py protocol.json release.py report.py scene.py scratch_model.py
 sensitivity.py stead.py stretch.py visuals.py""".split())
-IGNORE = {".git","__pycache__",".pytest_cache",".ipynb_checkpoints",".venv","runs","vendor","raw","conventional"}
+IGNORE = {".git","__pycache__",".pytest_cache",".ipynb_checkpoints",".venv","runs","vendor","raw","conventional","gathers","upstream"}
 
 
 def digest(path):
