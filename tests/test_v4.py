@@ -37,6 +37,24 @@ class Archive(unittest.TestCase):
         self.assertEqual(x.shape, (96, 6001))
 
 
+class Geometry(unittest.TestCase):
+    def test_located_runs(self):
+        self.assertEqual(das.located_runs([5, 6, 7, 10, 11, 20], 2), [(5, 7, 3), (10, 11, 2)])
+
+    def test_geometry_uses_index_column(self):
+        rows = np.r_[300:350, 400:600]
+        info = pd.DataFrame(dict(index=rows, latitude=35.0 + 0 * rows, longitude=-117.0 + rows * 1e-4,
+                                 elevation_m=0.0))
+        with mock.patch.object(das, "das_info", lambda: info):
+            lat, lon, dx = das.geometry()
+        self.assertAlmostEqual(lon, -117.0 + np.mean(range(400, 496)) * 1e-4, places=9)
+        self.assertAlmostEqual(dx, 9.1, delta=0.1)
+        gap = info[(info["index"] < 420) | (info["index"] > 430)]
+        with mock.patch.object(das, "das_info", lambda: gap):
+            with self.assertRaises(KeyError):
+                das.geometry()
+
+
 class Dataset(unittest.TestCase):
     def test_day_split_cycle(self):
         days = pd.date_range("2020-06-23", periods=10, freq="D", tz="UTC")
