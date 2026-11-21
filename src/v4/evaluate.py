@@ -21,6 +21,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from . import build
 from .build import load_gather, manifest, channel_snr_db
 from .das import CFG, geometry
 from .methods import ROOT, SeisDAE, bandpass, coherence, fk, mix, scores
@@ -32,6 +33,12 @@ E = CFG["evaluation"]
 def event_window(r):
     fs = CFG["window"]["fs"]
     return slice(int(r.itp) - fs // 2, min(CFG["window"]["samples"], int(r.its) + 10 * fs))
+
+
+def good_channels(r):
+    """Channels whose recorded reference reaches the scoring SNR (fixed rule, config)."""
+    snr = np.load(build.GATHERS / f"{r.id}_snr.npy")
+    return snr >= E["score_channel_snr_db"]
 
 
 def pairs(events, noise, draws, seed):
@@ -77,22 +84,22 @@ def select(runner, m):
     if ev.empty or nz.empty:
         raise ValueError("Need validation earthquakes and validation noise")
     rows = []
-    for r, nid, _ in pairs(ev, nz, 1, CFG["seed"] + 10):
-        s, n, win = load_gather(r.id), load_gather(nid), event_window(r)
+    for r, nid, _ in pairs(ev, nz, E["validation_noise_draws"], CFG["seed"] + 10):
+        s, n, win, ok = load_gather(r.id), load_gather(nid), event_window(r), good_channels(r)
         for level in E["levels_db"]:
             x = mix(s, n, level)
             for a in E["scalar_grid"]:
                 rows.append(dict(method="Scalar", setting=json.dumps(a), event=r.id, level=level,
-                                 **scores(s, x, a * x, win)))
+                                 **scores(s[ok], x[ok], (a * x)[ok], win)))
             for band in E["bandpass_hz"]:
                 rows.append(dict(method="Bandpass", setting=json.dumps(band), event=r.id, level=level,
-                                 **scores(s, x, bandpass(x, band), win)))
+                                 **scores(s[ok], x[ok], bandpass(x, band)[ok], win)))
             das = runner.das(x)
             for v in E["fk_velocity_m_s"]:
                 rows.append(dict(method="f-k", setting=json.dumps(v), event=r.id, level=level,
-                                 **scores(s, x, fk(x, runner.dx, v), win)))
+                                 **scores(s[ok], x[ok], fk(x, runner.dx, v)[ok], win)))
                 rows.append(dict(method="seisDAE (DAS) + f-k", setting=json.dumps(v), event=r.id, level=level,
-                                 **scores(s, x, fk(das, runner.dx, v), win)))
+                                 **scores(s[ok], x[ok], fk(das, runner.dx, v)[ok], win)))
     grid = pd.DataFrame(rows)
     table = grid.groupby(["method", "setting"], as_index=False)[["gain_db", "si_gain_db"]].mean()
     chosen = {}
@@ -126,12 +133,12 @@ def synthetic(runner, m, settings):
     rows, keep = [], {}
     example = ev.iloc[np.argsort(np.abs(ev.median_snr_db - ev.median_snr_db.median()).to_numpy())[0]].id
     for k, (r, nid, draw) in enumerate(pairs(ev, nz, E["noise_draws"], CFG["seed"] + 20)):
-        s, n, win = load_gather(r.id), load_gather(nid), event_window(r)
+        s, n, win, ok = load_gather(r.id), load_gather(nid), event_window(r), good_channels(r)
         for level in E["levels_db"]:
             x = mix(s, n, level)
             for method, y in runner.outputs(x, settings).items():
                 rows.append(dict(event=r.id, noise=nid, draw=draw, level=level, method=method,
-                                 **scores(s, x, y, win)))
+                                 scored_channels=int(ok.sum()), **scores(s[ok], x[ok], y[ok], win)))
                 if r.id == example and draw == 0 and level == 0:
                     keep[method] = y.astype(np.float32)
             if r.id == example and draw == 0 and level == 0:
