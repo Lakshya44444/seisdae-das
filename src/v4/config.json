@@ -33,13 +33,13 @@
     "regional_radius_deg": 6.0
   },
   "selection": {
-    "strong_candidates": 450,
+    "strong_candidates": 240,
     "weak_candidates": 120,
     "weak_magnitude": [0.5, 1.6],
     "strong_snr_db": 15.0,
     "strong_min_channel_fraction": 0.5,
     "weak_snr_db": [3.0, 12.0],
-    "noise_windows_per_day": 8,
+    "noise_windows_per_day": 6,
     "noise_attempts_per_day": 60
   },
   "split": {

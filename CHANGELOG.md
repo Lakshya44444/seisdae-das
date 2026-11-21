@@ -86,3 +86,7 @@ The previous V3 archive ended at `src/v3/mechanism.py`. Its preserved tables and
 | `tests/test_v4.py` (11 offline tests) | Verifies byte offsets against V3 downloads, splits, export format, mixing, SI invariance, f-k and STFT identity. |
 
 No V4 results are reported here. Run the steps in README_v4.md; `results_v4/summary.md` is generated from the CSV files.
+
+### V4 download size — 21 November 2026
+
+During the first full download, candidates ranked 200–237 (M1.0–1.9) were almost all below the selection SNR. To save time, `strong_candidates` was lowered from 450 to 240 and `noise_windows_per_day` from 8 to 6. Both are data-volume settings. No validation or test score had been computed when they were changed.
