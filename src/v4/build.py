@@ -80,6 +80,52 @@ def candidates(events, lat, lon):
     return pd.concat([strong.assign(candidate="strong"), weak.assign(candidate="weak")], ignore_index=True)
 
 
+def classify(split, snr, overlap):
+    """Event class from per-channel SNR (rules in config.json "selection")."""
+    s = CFG["selection"]
+    median = float(np.median(snr))
+    if overlap and not s.get("allow_overlap", False):
+        return "overlap"
+    if np.mean(snr >= s["strong_snr_db"]) >= s["strong_min_channel_fraction"]:
+        return "strong"
+    if split == "test" and not overlap and s["weak_snr_db"][0] <= median < s["weak_snr_db"][1]:
+        return "weak"
+    return "unused"
+
+
+def earthquake_snr(m):
+    eq = m[m.kind != "noise"].copy()
+    return eq, {r.id: np.load(GATHERS / f"{r.id}_snr.npy") for r in eq.itertuples()}
+
+
+def stats():
+    """How many earthquakes each strong rule would keep (no waveform scores involved)."""
+    m = manifest()
+    eq, snr = earthquake_snr(m)
+    print(f"downloaded earthquakes: {len(eq)}  (overlap flag set: {int((eq.overlap > 0).sum())})")
+    print("channel_db  fraction | train/val/test no-overlap | train/val/test incl. overlap | train traces")
+    for db in (8, 10, 12, 15):
+        for frac in (0.2, 0.3, 0.5):
+            keep = np.array([np.mean(snr[i] >= db) >= frac for i in eq.id])
+            alone = keep & (eq.overlap.to_numpy() == 0)
+            count = lambda mask: "/".join(str(int((mask & (eq.split == k).to_numpy()).sum()))
+                                          for k in ("train", "validation", "test"))
+            traces = sum(int(np.sum(snr[i] >= db)) for i, ok, sp in zip(eq.id, keep, eq.split) if ok and sp == "train")
+            print(f"{db:>10}  {frac:>8} | {count(alone):>25} | {count(keep):>28} | {traces:>12}")
+
+
+def reclassify():
+    """Re-apply the config rules to downloaded earthquakes without downloading again."""
+    m = manifest()
+    eq, snr = earthquake_snr(m)
+    for i in eq.index:
+        r = m.loc[i]
+        m.loc[i, "kind"] = classify(r.split, snr[r.id], r.overlap > 0)
+        m.loc[i, "strong_fraction"] = float(np.mean(snr[r.id] >= CFG["selection"]["strong_snr_db"]))
+    m.to_csv(MANIFEST, index=False)
+    print(m.groupby(["kind", "split"]).size().to_string())
+
+
 def fetch(name, start, rows):
     path = GATHERS / f"{name}.npz"
     if path.exists():
@@ -114,14 +160,7 @@ def download(limit=None):
             continue
         snr = channel_snr_db(x, itp, its)
         median, frac = float(np.median(snr)), float(np.mean(snr >= s["strong_snr_db"]))
-        if overlap:
-            kind = "overlap"
-        elif frac >= s["strong_min_channel_fraction"]:
-            kind = "strong"
-        elif e.split == "test" and s["weak_snr_db"][0] <= median < s["weak_snr_db"][1]:
-            kind = "weak"
-        else:
-            kind = "unused"
+        kind = classify(e.split, snr, overlap)
         np.save(GATHERS / f"{name}_snr.npy", snr)
         records.append(dict(id=name, kind=kind, split=e.split, start=start, event_id=e.event_id,
                             magnitude=e.magnitude, dist_km=e.dist_km, itp=itp, its=min(its, w["samples"] - 1),
@@ -199,9 +238,15 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--download", action="store_true")
     p.add_argument("--export", action="store_true")
+    p.add_argument("--stats", action="store_true", help="Event counts under several strong-SNR rules")
+    p.add_argument("--reclassify", action="store_true", help="Re-apply config rules to downloaded events")
     p.add_argument("--limit", type=int, help="Smoke test: this many candidates per kind and 5 days of noise")
     a = p.parse_args()
+    if a.stats:
+        stats()
     if a.download:
         download(a.limit)
+    if a.reclassify:
+        reclassify()
     if a.export:
         export()
