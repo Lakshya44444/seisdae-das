@@ -1,0 +1,62 @@
+{
+  "seed": 2026,
+  "archive": {
+    "base_url": "https://scedc-pds.s3.us-west-2.amazonaws.com/Ridgecrest_DAS",
+    "first_day": "2020-06-23",
+    "last_day": "2020-07-29",
+    "raw_hz": 250,
+    "samples_per_hour": 900000
+  },
+  "channels": {
+    "first_row": 400,
+    "count": 96,
+    "spacing_m": null,
+    "info_lat_column": null,
+    "info_lon_column": null
+  },
+  "window": {
+    "fs": 100,
+    "samples": 6001,
+    "p_index": 1000,
+    "pad_s": 2.0,
+    "highpass_hz": 0.5,
+    "vp_km_s": 6.0,
+    "vs_km_s": 3.5
+  },
+  "catalog": {
+    "radius_deg": 0.6,
+    "min_magnitude": 1.0,
+    "screen_radius_deg": 1.0,
+    "regional_magnitude": 3.5,
+    "regional_radius_deg": 6.0
+  },
+  "selection": {
+    "strong_candidates": 450,
+    "weak_candidates": 120,
+    "weak_magnitude": [0.5, 1.6],
+    "strong_snr_db": 15.0,
+    "strong_min_channel_fraction": 0.5,
+    "weak_snr_db": [3.0, 12.0],
+    "noise_windows_per_day": 8,
+    "noise_attempts_per_day": 60
+  },
+  "split": {
+    "rule": "day_index mod 5: 0,1,2 train; 3 validation; 4 test",
+    "train": [0, 1, 2],
+    "validation": [3],
+    "test": [4]
+  },
+  "export": {
+    "channel_stride": 2,
+    "noise_channel_stride": 4
+  },
+  "evaluation": {
+    "levels_db": [-10, -5, 0, 5, 10],
+    "noise_draws": 2,
+    "bandpass_hz": [[1, 10], [1, 20], [2, 30], [0.5, 45]],
+    "fk_velocity_m_s": [250, 500, 1000, 2000],
+    "scalar_grid": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "selection": "classical and cascade settings maximize mean validation SI gain over all levels; the scalar control maximizes mean validation ordinary gain",
+    "bootstrap_draws": 5000
+  }
+}
