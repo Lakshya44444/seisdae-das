@@ -8,7 +8,7 @@
     "samples_per_hour": 900000
   },
   "channels": {
-    "first_row": 400,
+    "first_row": 918,
     "count": 96,
     "spacing_m": null,
     "info_index_column": "index",

@@ -28,7 +28,7 @@ These are the assumptions about the archive, and how each is checked:
 | Byte layout: 3,600-byte file header, then per channel a 240-byte trace header and 900,000 float32 little-endian samples | Reproduces the V3 byte offsets of 24 checksummed traces (`tests/test_v4.py`). Step 1 also checks that the file size divides exactly. |
 | Each hour file starts on the UTC hour named in its file name | Step 1 prints the time stored in the trace headers. |
 | Row *i* of the SEG-Y file is row *i* of `das_info.csv` | Step 1 prints both counts and the das_info columns. |
-| Channel block: rows 400–495 (96 channels) | V3 used rows 400–423. If step 1 shows gaps or bad channels, change `channels.first_row` in `src/v4/config.json`. |
+| Channel block: rows 918–1013 (96 channels) | `das_info.csv` locates rows 25–1249 with gaps; rows 400–495 crossed the unlocated rows 457–471. Rule fixed before any event was examined: centre the block in the longest located run (870–1061, 192 rows). |
 
 If any check fails, fix `src/v4/config.json` (or the code) before continuing.
 
