@@ -92,7 +92,9 @@ class Dataset(unittest.TestCase):
             with mock.patch.multiple(build, GATHERS=g, MANIFEST=tmp / "manifest.csv", UPSTREAM=tmp / "up"):
                 build.export()
             sig = sorted((tmp / "up/signal").glob("*.npz"))
-            self.assertEqual([f.stem for f in sig], ["eq_1_c000", "eq_1_c004", "eq_1_c006"])
+            stride, low = build.CFG["export"]["channel_stride"], 2
+            expected = [f"eq_1_c{c:03d}" for c in range(0, 8, stride) if c != low]
+            self.assertEqual([f.stem for f in sig], expected)
             with np.load(sig[0]) as z:
                 self.assertEqual(z["data"].shape, (6001,))
                 self.assertEqual(int(z["itp"]), 1000)
