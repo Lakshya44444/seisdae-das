@@ -8,7 +8,9 @@ Three tables are written to data/v4/:
 
 import pandas as pd
 
-from .das import CFG, DATA, geometry
+from .das import CFG, DATA, geometry, haversine_km
+
+KM_PER_DEG = 111.19
 
 
 def to_frame(catalog):
@@ -27,6 +29,18 @@ def to_frame(catalog):
     return pd.DataFrame(rows).sort_values("time").reset_index(drop=True)
 
 
+def within(d, lat, lon, radius_deg):
+    """Keep events whose epicentre lies within radius_deg of (lat, lon).
+
+    Applied after every query: the smoke test showed the service returning
+    events thousands of km away despite maxradius.
+    """
+    if d.empty:
+        return d
+    km = haversine_km(lat, lon, d.latitude.values, d.longitude.values)
+    return d[km <= radius_deg * KM_PER_DEG].reset_index(drop=True)
+
+
 def query(client, lat, lon, radius, minmag, start, end):
     """Query day by day so no single request hits a server row limit."""
     from obspy.clients.fdsn.header import FDSNNoDataException
@@ -41,6 +55,11 @@ def query(client, lat, lon, radius, minmag, start, end):
             continue
         frames.append(to_frame(cat))
     d = pd.concat(frames, ignore_index=True).drop_duplicates("event_id")
+    received = len(d)
+    d = within(d, lat, lon, radius)
+    if minmag is not None:
+        d = d[d.magnitude >= minmag]
+    print(f"  received {received}, kept {len(d)} within {radius} deg")
     return d.sort_values("time").reset_index(drop=True)
 
 
