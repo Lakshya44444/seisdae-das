@@ -1,8 +1,8 @@
 """Save a picture of downloaded gathers to check window placement by eye.
 
-  python -m src.v4.peek eq_38595986 eq_39492720
+  python -m src.peek eq_38595986 eq_39492720
 
-Writes figures_v4/peek_<id>.png with the predicted P (10 s) and S times.
+Writes results/figures/peek_<id>.png with the predicted P (10 s) and S times.
 """
 
 import sys
@@ -14,14 +14,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from .build import load_gather, manifest
-from .das import ROOT, SUFFIX
+from .das import ROOT
 
 FS = 100
 
 
 def main(ids):
     m = manifest().set_index("id")
-    out = ROOT / f"figures_v4{SUFFIX}"
+    out = ROOT / "results" / "figures"
     out.mkdir(exist_ok=True)
     for name in ids:
         x, r = load_gather(name), m.loc[name]

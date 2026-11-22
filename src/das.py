@@ -7,7 +7,7 @@ data/noise_v2/continuous.json, which were downloaded and checksummed in V3):
     for every channel: 240-byte trace header + 900000 little-endian float32 samples
                        (one hour at 250 Hz)
 
-Run `python -m src.v4.das --inspect` once before anything else. It prints the
+Run `python -m src.das --inspect` once before anything else. It prints the
 trace count, the time stamps written in the trace headers and the columns of
 das_info.csv, so the assumptions above can be checked on real files.
 """
@@ -24,11 +24,9 @@ import pandas as pd
 import requests
 from scipy.signal import butter, detrend, resample_poly, sosfiltfilt
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 CFG = json.loads((Path(__file__).with_name("config.json")).read_text())
-DATA = ROOT / "data" / "v4"
-TAG = CFG["run"]["tag"]
-SUFFIX = f"_{TAG}" if TAG else ""
+DATA = ROOT / "data" / "ridgecrest"
 
 FILE_HEADER = 3600
 TRACE_HEADER = 240
@@ -122,19 +120,16 @@ def read_raw(start, seconds, rows, workers=None):
 
 
 def preprocess(raw):
-    """Detrend, optionally remove the common mode, high-pass, resample 250 -> 100 Hz.
+    """Detrend, remove the common mode, high-pass, resample 250 -> 100 Hz.
 
-    Common-mode removal (median over the block's channels) was used in V4.0.
-    Over a 760 m block a local earthquake arrives almost simultaneously on all
-    channels, so the median also removes earthquake energy; V4.1 turns it off.
+    The common mode is the median over the block's 96 channels at each sample.
 
     No band-limiting beyond the 0.5 Hz high-pass and the anti-alias filter of
     resample_poly: noise suppression is left to the methods being compared.
     """
     w = CFG["window"]
     x = detrend(raw, axis=-1)
-    if CFG["run"]["common_mode_removal"]:
-        x = x - np.median(x, axis=0, keepdims=True)
+    x = x - np.median(x, axis=0, keepdims=True)
     sos = butter(4, w["highpass_hz"], fs=RAW_HZ, btype="highpass", output="sos")
     x = sosfiltfilt(sos, x, axis=-1)
     return resample_poly(x, 2, 5, axis=-1)

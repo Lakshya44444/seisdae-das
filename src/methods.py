@@ -1,4 +1,4 @@
-"""Denoisers compared in V4 and the scores used to compare them.
+"""Denoisers compared in this study and the scores used to compare them.
 
 All gathers are (channels, 6001) arrays at 100 Hz. seisDAE runs trace by trace,
 exactly as in the original paper; f-k and the cascade use the whole gather.
@@ -16,7 +16,7 @@ from scipy.signal import butter, istft, sosfiltfilt, stft
 os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 FS = 100
 
 

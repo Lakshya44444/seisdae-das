@@ -1,8 +1,8 @@
-"""ROC, AUC and paired bootstrap for the V4 detection test.
+"""ROC, AUC and paired bootstrap for the detection test.
 
-  python -m src.v4.detection_stats [path/to/detection_rows.csv]
+  python -m src.detection_stats [path/to/detection_rows.csv]
 
-Reads detection_rows.csv written by src.v4.evaluate. Earthquake windows and
+Reads detection_rows.csv written by src.evaluate. Earthquake windows and
 noise windows are both resampled in every bootstrap draw, so the intervals
 include the uncertainty of the noise-based thresholds. The same resampled
 windows are used for every method, so the differences are paired.
@@ -152,4 +152,4 @@ def roc(eq, nz, methods, out):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parents[2] / "results_v4" / "detection_rows.csv")
+    main(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parents[1] / "results" / "detection_rows.csv")

@@ -1,10 +1,5 @@
 {
   "seed": 2026,
-  "run": {
-    "tag": "",
-    "common_mode_removal": true,
-    "note": "tag v41 (common mode off) was tried and rejected; see CHANGELOG"
-  },
   "archive": {
     "base_url": "https://scedc-pds.s3.us-west-2.amazonaws.com/Ridgecrest_DAS",
     "first_day": "2020-06-23",
@@ -40,13 +35,19 @@
   "selection": {
     "strong_candidates": 240,
     "weak_candidates": 120,
-    "weak_magnitude": [0.5, 1.6],
+    "weak_magnitude": [
+      0.5,
+      1.6
+    ],
     "strong_snr_db": 10.0,
     "strong_min_channel_fraction": 0.3,
     "allow_overlap": true,
     "snr_on_fast_component": true,
     "fast_vmin_m_s": 1000,
-    "weak_snr_db": [3.0, 12.0],
+    "weak_snr_db": [
+      3.0,
+      12.0
+    ],
     "noise_windows_per_day": 6,
     "noise_attempts_per_day": 60,
     "extra_test_noise_per_day": 24,
@@ -54,24 +55,74 @@
   },
   "split": {
     "rule": "day_index mod 5: 0,1,2 train; 3 validation; 4 test",
-    "train": [0, 1, 2],
-    "validation": [3],
-    "test": [4]
+    "train": [
+      0,
+      1,
+      2
+    ],
+    "validation": [
+      3
+    ],
+    "test": [
+      4
+    ]
   },
   "export": {
     "channel_stride": 1,
     "noise_channel_stride": 4
   },
   "evaluation": {
-    "levels_db": [-10, -5, 0, 5, 10],
+    "levels_db": [
+      -10,
+      -5,
+      0,
+      5,
+      10
+    ],
     "noise_draws": 2,
     "validation_noise_draws": 2,
     "score_channel_snr_db": 10.0,
-    "bandpass_hz": [[1, 10], [1, 20], [2, 30], [0.5, 45]],
-    "fk_velocity_m_s": [250, 500, 1000, 2000],
-    "scalar_grid": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "bandpass_hz": [
+      [
+        1,
+        10
+      ],
+      [
+        1,
+        20
+      ],
+      [
+        2,
+        30
+      ],
+      [
+        0.5,
+        45
+      ]
+    ],
+    "fk_velocity_m_s": [
+      250,
+      500,
+      1000,
+      2000
+    ],
+    "scalar_grid": [
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
     "selection": "classical and cascade settings maximize mean validation SI gain over all levels; the scalar control maximizes mean validation ordinary gain",
     "bootstrap_draws": 5000,
-    "false_alarm_rates": [0.05, 0.1]
+    "false_alarm_rates": [
+      0.05,
+      0.1
+    ]
   }
 }

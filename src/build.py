@@ -1,8 +1,8 @@
 """Build the 60 s Ridgecrest DAS dataset: earthquake gathers, noise gathers, splits.
 
-Steps (each is resumable; finished windows are cached under data/v4/gathers):
-  python -m src.v4.build --download      fetch candidate events and noise windows
-  python -m src.v4.build --export        write single-trace NPZ files for the
+Steps (each is resumable; finished windows are cached under data/ridgecrest/gathers):
+  python -m src.build --download      fetch candidate events and noise windows
+  python -m src.build --export        write single-trace NPZ files for the
                                          original seisDAE trainer (train days only)
 
 Every window has 6001 samples at 100 Hz. Earthquake windows place the
@@ -15,11 +15,11 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from .das import CFG, DATA, SUFFIX, MissingData, block_rows, geometry, haversine_km, read_window
+from .das import CFG, DATA, MissingData, block_rows, geometry, haversine_km, read_window
 
-GATHERS = DATA / f"gathers{SUFFIX}"
-MANIFEST = DATA / f"manifest{SUFFIX}.csv"
-UPSTREAM = DATA / f"upstream{SUFFIX}"
+GATHERS = DATA / "gathers"
+MANIFEST = DATA / "manifest.csv"
+UPSTREAM = DATA / "upstream"
 
 
 def split_of(time):

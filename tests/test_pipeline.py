@@ -1,99 +1,181 @@
-import hashlib
+"""Offline tests for the Ridgecrest DAS pipeline (no network, no TensorFlow)."""
+import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
 import numpy as np
+import pandas as pd
 
-from src.data import LEVELS, ROOT, load, mix
-from src.evaluate import fit_scalar
-from src.summary import paired_intervals, summarise
-from src.metrics import bandpass, fk, scores, wavelet
-from src.neural import decode, encode
+from src import build, catalog, das, methods
+from src.evaluate import detection_stat, pairs
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
-class BenchmarkTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.events, cls.arrays = load(ROOT / "data/prepared")
+class Archive(unittest.TestCase):
+    def test_byte_offsets_match_v3_downloads(self):
+        manifest = json.loads((ROOT / "tests/data/continuous.json").read_text())
+        n = manifest["duration_s"] * manifest["source_hz"]
+        for seg in manifest["segments"]:
+            first = das.byte_offset(seg["trace_row"], manifest["sample_start"])
+            self.assertEqual(first, seg["start_byte"])
+            self.assertEqual(first + 4 * n - 1, seg["end_byte"])
 
-    def test_no_event_reuse(self):
-        e = self.events
-        self.assertTrue(e.event_id.is_unique)
-        self.assertEqual(
-            e.split.value_counts().to_dict(),
-            {"train": 24, "validation": 6, "pilot": 6, "test": 145},
-        )
-        for site, g in e.groupby("array"):
-            self.assertEqual(
-                g.split.value_counts().to_dict(),
-                {
-                    "train": 12,
-                    "validation": 3,
-                    "pilot": 3,
-                    "test": 133 if site == "longvalley" else 12,
-                },
-            )
+    def test_split_by_hour(self):
+        start = pd.Timestamp("2020-06-24T17:59:50Z")
+        pieces = das.split_by_hour(start, 20 * 250)
+        self.assertEqual([p[1:] for p in pieces], [(das.PER_HOUR - 2500, 2500), (0, 2500)])
+        self.assertEqual(pieces[1][0], pd.Timestamp("2020-06-24T18:00Z"))
 
-    def test_requested_snr(self):
-        for s, n in zip(self.arrays["reference"], self.arrays["noise"]):
-            for level in LEVELS:
-                x = mix(s, n, level)
-                measured = 10 * np.log10(np.sum(s * s) / np.sum((x - s) ** 2))
-                self.assertAlmostEqual(measured, level, places=9)
+    def test_window_length(self):
+        def fake(start, seconds, rows):
+            return np.random.default_rng(0).normal(size=(len(rows), int(round(seconds * 250))))
+        with mock.patch.object(das, "read_raw", fake):
+            x = das.read_window(pd.Timestamp("2020-06-24T17:10Z"), list(range(96)))
+        self.assertEqual(x.shape, (96, 6001))
 
-    def test_identity_metrics_and_filters(self):
-        s, n, p = (self.arrays[key][0] for key in ("reference", "noise", "nominal_p"))
-        x = mix(s, n, 0)
-        self.assertAlmostEqual(scores(s, x, x, p)["gain_db"], 0)
-        for fun in (bandpass, fk, wavelet):
-            y = fun(x)
-            self.assertEqual(y.shape, x.shape)
-            self.assertTrue(np.isfinite(y).all())
 
-    def test_mask_roundtrip(self):
-        x = self.arrays["reference"][0]
-        feat, z, start = encode(x)
-        self.assertEqual(feat.shape, (24, 100, 121, 2))
-        np.testing.assert_allclose(decode(z, 1, start, 70), x, atol=1e-6, rtol=1e-5)
+class Geometry(unittest.TestCase):
+    def test_located_runs(self):
+        self.assertEqual(das.located_runs([5, 6, 7, 10, 11, 20], 2), [(5, 7, 3), (10, 11, 2)])
 
-    def test_scalar_excludes_validation_pilot_and_test(self):
-        baseline = fit_scalar(self.events, self.arrays)
-        altered = {k: v.copy() for k, v in self.arrays.items()}
-        altered["noise"][self.events.split != "train"] = np.nan
-        self.assertEqual(fit_scalar(self.events, altered), baseline)
-        self.assertTrue(0.0 < baseline < 1.0)
+    def test_geometry_uses_index_column(self):
+        first = das.block_rows()[0]
+        rows = np.r_[first - 100:first - 50, first - 10:first + 200]
+        info = pd.DataFrame(dict(index=rows, latitude=35.0 + 0 * rows, longitude=-117.0 + rows * 1e-4,
+                                 elevation_m=0.0))
+        with mock.patch.object(das, "das_info", lambda: info):
+            lat, lon, dx = das.geometry()
+        self.assertAlmostEqual(lon, -117.0 + np.mean(das.block_rows()) * 1e-4, places=9)
+        self.assertAlmostEqual(dx, 9.1, delta=0.1)
+        gap = info[(info["index"] < first + 20) | (info["index"] > first + 30)]
+        with mock.patch.object(das, "das_info", lambda: gap):
+            with self.assertRaises(KeyError):
+                das.geometry()
 
-    def test_eventwise_summaries(self):
-        import pandas as pd
 
-        d = pd.DataFrame(
-            {
-                "event_id": [1, 2, 1, 2],
-                "array": ["A", "B", "A", "B"],
-                "level": [0] * 4,
-                "method": ["Zero-shot"] * 2 + ["Fine-tuned"] * 2,
-                "gain_db": [1.0, 2.0, 2.0, 3.0],
-                "reference_picks": [4] * 4,
-                "matched_picks": [1, 3, 2, 4],
-                "pick_abs_ms_sum": [10, 60, 10, 60],
-                "cc": [1.0] * 4,
-                "rmse": [1.0] * 4,
-                "nrmse": [1.0] * 4,
-                "ms_per_trace": [1.0] * 4,
-            }
-        )
-        row = summarise(d, ["level", "method"]).loc[(0, "Zero-shot")]
-        self.assertEqual(row["gain_db"], 1.5)
-        self.assertEqual(row["onset_mae_ms"], 17.5)
-        self.assertEqual(row["pick_recovery"], 0.5)
-        ci = paired_intervals(d, draws=50).iloc[0]
-        self.assertEqual((ci.ci95_low_db, ci.ci95_high_db), (1.0, 1.0))
+class Catalogue(unittest.TestCase):
+    def test_distance_filter(self):
+        d = pd.DataFrame(dict(event_id=["near", "edge", "far"], latitude=[35.70, 36.20, 61.0],
+                              longitude=[-117.70, -117.736, -150.0]))
+        kept = catalog.within(d, 35.652, -117.736, 0.6)
+        self.assertEqual(list(kept.event_id), ["near", "edge"])
 
-    def test_checkpoint_identity(self):
-        with (ROOT / "models/gr_mixed_stft.h5").open("rb") as f:
-            self.assertEqual(
-                hashlib.file_digest(f, "sha256").hexdigest(),
-                "ec61038e62259630bb35bed6217797b44c3b2bddcfeec9c9fc90b8748c54a63a",
-            )
+
+class Dataset(unittest.TestCase):
+    def test_day_split_cycle(self):
+        days = pd.date_range("2020-06-23", periods=10, freq="D", tz="UTC")
+        got = [build.split_of(d + pd.Timedelta(hours=5)) for d in days]
+        self.assertEqual(got, ["train"] * 3 + ["validation", "test"] + ["train"] * 3 + ["validation", "test"])
+
+    def test_fast_snr_ignores_traffic(self):
+        rng = np.random.default_rng(8)
+        t = np.arange(6001) / 100
+        offsets = np.arange(96) * 7.95
+        wave = lambda delay, f: np.exp(-((t[None, :] - delay[:, None]) * 1.5) ** 2) * np.sin(
+            2 * np.pi * f * (t[None, :] - delay[:, None]))
+        noise = 0.05 * rng.normal(size=(96, 6001))
+        quake = wave(12 + offsets / 3000.0, 6) + noise
+        traffic = wave(12 + offsets / 80.0, 6) + noise
+        q = build.fast_snr(quake, 1000, 1300, 7.95)
+        c = build.fast_snr(traffic, 1000, 1300, 7.95)
+        self.assertGreater(np.median(q), 15)
+        self.assertLess(np.median(c), np.median(build.channel_snr_db(traffic, 1000, 1300)) - 10)
+
+    def test_snr(self):
+        rng = np.random.default_rng(1)
+        x = rng.normal(size=(4, 6001))
+        x[:, 1000:2500] *= 10
+        snr = build.channel_snr_db(x, 1000, 1400)
+        self.assertTrue(np.all(snr > 15))
+
+    def test_export_format(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            g = tmp / "gathers"
+            g.mkdir()
+            rng = np.random.default_rng(2)
+            np.savez_compressed(g / "eq_1.npz", data=rng.normal(size=(8, 6001)).astype("float32"))
+            np.save(g / "eq_1_snr.npy", np.array([20, 20, 5, 20, 20, 20, 20, 20.0]))
+            np.save(g / "eq_1_fastsnr.npy", np.array([20, 20, 5, 20, 20, 20, 20, 20.0]))
+            np.savez_compressed(g / "noise_a.npz", data=rng.normal(size=(8, 6001)).astype("float32"))
+            pd.DataFrame([dict(id="eq_1", kind="strong", split="train", start="2020-06-23T01:00Z", itp=1000, its=1500),
+                          dict(id="noise_a", kind="noise", split="train", start="2020-06-23T02:00Z")]).to_csv(
+                tmp / "manifest.csv", index=False)
+            with mock.patch.multiple(build, GATHERS=g, MANIFEST=tmp / "manifest.csv", UPSTREAM=tmp / "up"):
+                build.export()
+            sig = sorted((tmp / "up/signal").glob("*.npz"))
+            stride, low = build.CFG["export"]["channel_stride"], 2
+            expected = [f"eq_1_c{c:03d}" for c in range(0, 8, stride) if c != low]
+            self.assertEqual([f.stem for f in sig], expected)
+            with np.load(sig[0]) as z:
+                self.assertEqual(z["data"].shape, (6001,))
+                self.assertEqual(int(z["itp"]), 1000)
+            self.assertEqual(len(list((tmp / "up/noise").glob("*.npz"))), 2)
+
+
+class Scores(unittest.TestCase):
+    def test_mix_level(self):
+        rng = np.random.default_rng(3)
+        s, n = rng.normal(size=(5, 6001)), rng.normal(size=(5, 6001))
+        for level in (-10, 0, 10):
+            x = methods.mix(s, n, level)
+            self.assertAlmostEqual(10 * np.log10(np.sum(s ** 2) / np.sum((x - s) ** 2)), level, places=6)
+
+    def test_scalar_has_no_si_gain(self):
+        rng = np.random.default_rng(4)
+        s = rng.normal(size=(5, 6001))
+        x = methods.mix(s, rng.normal(size=s.shape), 0)
+        r = methods.scores(s, x, 0.5 * x, slice(1000, 2000))
+        self.assertGreater(r["gain_db"], 0)
+        self.assertAlmostEqual(r["si_gain_db"], 0, places=9)
+        self.assertAlmostEqual(methods.scores(s, x, s, slice(None))["cc"], 1, places=9)
+
+    def test_fk_keeps_fast_removes_slow(self):
+        t = np.arange(6001) / 100
+        nc, dx = 96, 8.0
+        pulse = lambda delay: np.exp(-((t[None, :] - 20 - delay[:, None]) * 8) ** 2) * np.sin(2 * np.pi * 8 * (t[None, :] - delay[:, None]))
+        offsets = np.arange(nc) * dx
+        fast, slow = pulse(offsets / 5000.0), pulse(offsets / 300.0)
+        keep = methods.fk(fast, dx, 500)
+        kill = methods.fk(slow, dx, 500)
+        mid = slice(20, 76)
+        self.assertGreater(np.mean(methods.correlation(fast[mid], keep[mid])), 0.95)
+        self.assertLess(np.sum(kill[mid] ** 2), 0.1 * np.sum(slow[mid] ** 2))
+
+    def test_stft_identity_mask(self):
+        m = methods.SeisDAE.__new__(methods.SeisDAE)
+        m.n, m.spec = 6001, dict(fs=100, nfft=198, nperseg=99)
+        from scipy.signal import istft
+        x = np.random.default_rng(5).normal(size=(3, 6001))
+        _, z = m.encode(x)
+        _, y = istft(z, **m.spec)
+        self.assertTrue(np.allclose(y[:, :6001], x - x.mean(1, keepdims=True), atol=1e-4))
+
+    def test_config_with_windows_line_endings(self):
+        raw = (ROOT / "models/gr_mixed_stft.config").read_bytes()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "crlf.config"
+            path.write_bytes(raw.replace(b"\n", b"\r\n"))
+            self.assertEqual(methods.read_config(path), methods.read_config(ROOT / "models/gr_mixed_stft.config"))
+
+    def test_detection_stat(self):
+        rng = np.random.default_rng(9)
+        x = rng.normal(size=(8, 6001))
+        x[:, 1000:2500] *= 10
+        self.assertAlmostEqual(detection_stat(x), detection_stat(0.1 * x), places=9)
+        self.assertGreater(detection_stat(x), 15)
+        self.assertLess(abs(detection_stat(rng.normal(size=(8, 6001)))), 1)
+
+    def test_pairs_deterministic(self):
+        ev = pd.DataFrame(dict(id=["a", "b", "c"]))
+        nz = pd.DataFrame(dict(id=["n1", "n2", "n3", "n4"]))
+        one = [(r.id, n, d) for r, n, d in pairs(ev, nz, 2, 7)]
+        two = [(r.id, n, d) for r, n, d in pairs(ev, nz, 2, 7)]
+        self.assertEqual(one, two)
+        self.assertTrue(all(len({n for e, n, _ in one if e == k}) == 2 for k in "abc"))
 
 
 if __name__ == "__main__":

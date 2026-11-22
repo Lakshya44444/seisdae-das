@@ -1,6 +1,6 @@
 """Download the SCEDC earthquake catalogue for the Ridgecrest DAS period.
 
-Three tables are written to data/v4/:
+Three tables are written to data/ridgecrest/:
   catalog_events.csv   M >= min_magnitude within radius_deg (candidate signals)
   catalog_screen.csv   every catalogued event within screen_radius_deg (noise screening)
   catalog_regional.csv M >= regional_magnitude within regional_radius_deg (noise screening)
