@@ -171,6 +171,60 @@ def field(runner, m, settings):
     return pd.DataFrame(rows), len(ev)
 
 
+def detection_stat(y):
+    """Median over channels of the power ratio (dB): 20 s after the predicted P over the pre-P window.
+
+    The same fixed windows are used for earthquake and noise gathers, and the
+    ratio ignores overall scale.
+    """
+    fs, itp = CFG["window"]["fs"], CFG["window"]["p_index"]
+    pre = np.mean(y[:, fs: itp - fs] ** 2, axis=1)
+    post = np.mean(y[:, itp - fs // 2: itp + 20 * fs] ** 2, axis=1)
+    return float(np.median(10 * np.log10(np.maximum(post, 1e-30) / np.maximum(pre, 1e-30))))
+
+
+def detection(runner, m, settings):
+    """Detection test on recorded data: no added noise and no reference needed.
+
+    Every downloaded test-day earthquake window without an overlapping
+    catalogued event is one positive. Every test-day noise window is one
+    negative. For each method the threshold is the noise-window quantile that
+    gives the stated false-alarm rate; the score is the fraction of earthquakes
+    above that threshold.
+    """
+    overlap = m["overlap"].fillna(0) if "overlap" in m else pd.Series(0, index=m.index)
+    ev = m[(m.kind != "noise") & (m.split == "test") & (overlap == 0)]
+    nz = m[(m.kind == "noise") & (m.split == "test")]
+    rows = []
+    for label, group in (("earthquake", ev), ("noise", nz)):
+        for k, r in enumerate(group.itertuples()):
+            x = load_gather(r.id)
+            for method, y in runner.outputs(x, settings).items():
+                if method == "Scalar":
+                    continue
+                rows.append(dict(window=r.id, label=label, method=method, stat_db=detection_stat(y),
+                                 magnitude=getattr(r, "magnitude", np.nan)))
+            print(f"detection {label} {k + 1}/{len(group)}", end="\r")
+    print()
+    d = pd.DataFrame(rows)
+    summary = []
+    for method, g in d.groupby("method"):
+        e = g[g.label == "earthquake"].stat_db.to_numpy()
+        n = g[g.label == "noise"].stat_db.to_numpy()
+        row = dict(method=method, earthquakes=len(e), noise_windows=len(n),
+                   median_earthquake_db=float(np.median(e)), median_noise_db=float(np.median(n)))
+        for fa in E["false_alarm_rates"]:
+            thr = float(np.quantile(n, 1 - fa, method="higher"))
+            hit = (e > thr).astype(float)
+            mean, lo, hi = bootstrap(hit, E["bootstrap_draws"], CFG["seed"])
+            tag = f"{int(round(fa * 100))}"
+            row.update({f"threshold_fa{tag}_db": thr, f"detected_fa{tag}": mean,
+                        f"detected_fa{tag}_lo": lo, f"detected_fa{tag}_hi": hi,
+                        f"false_alarm_fa{tag}": float(np.mean(n > thr))})
+        summary.append(row)
+    return d, pd.DataFrame(summary), len(ev), len(nz)
+
+
 def run(das_model, upstream=None):
     OUT.mkdir(exist_ok=True)
     m = manifest()
@@ -209,6 +263,12 @@ def run(das_model, upstream=None):
         f.to_csv(OUT / "field_events.csv", index=False)
         summarize(f, ["method"], ["median_snr_db", "channels_10db", "coherence"], CFG["seed"]).to_csv(
             OUT / "field_summary.csv", index=False)
+    det_rows, det_summary, n_det_eq, n_det_noise = detection(runner, m, settings)
+    det_rows.to_csv(OUT / "detection_rows.csv", index=False)
+    det_summary.to_csv(OUT / "detection_summary.csv", index=False)
+    print(det_summary[["method", "earthquakes", "noise_windows", "detected_fa5", "detected_fa5_lo",
+                       "detected_fa5_hi", "detected_fa10"]].round(3).to_string(index=False))
+    record.update(detection_earthquakes=n_det_eq, detection_noise_windows=n_det_noise)
     record.update(test_events=n_test, test_noise_windows=n_noise, weak_test_events=n_weak,
                   ms_per_trace={k: float(np.median(v)) for k, v in runner.ms.items()})
     (OUT / "run.json").write_text(json.dumps(record, indent=2, default=str))
