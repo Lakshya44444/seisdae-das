@@ -228,7 +228,7 @@ The README conclusion changed accordingly. Once the bandpass is tuned for detect
 ### Response to second review — 22 November 2026
 
 - **Detection score.** It is now described as a known-time test: sample 1000 is the predicted P arrival in earthquake windows and the same 10 s mark in noise windows. The README notes that the score rewards any method that removes energy outside the earthquake band.
-- **Unreliable tuning.** It is stated plainly: the validation choice of f-k velocity was not the best on test. `detection_tuning --tune-on non-test` tunes bandpass and f-k on all 30 non-test days. These methods have no trained parameters, so train days are fair for them. The cascade velocity is marked optimistic, because seisDAE saw part of the train-day data. A leave-one-day-out count reports how stable each choice is. Cached test scores are reused, so the test set is not scored again.
+- **Unreliable tuning.** It is stated plainly: the validation choice of f-k velocity was not the best on test. `detection_tuning --tune-on non-test` tunes bandpass and f-k on all 29 non-test days. These methods have no trained parameters, so train days are fair for them. The cascade velocity is marked optimistic, because seisDAE saw part of the train-day data. A leave-one-day-out count reports how stable each choice is. Cached test scores are reused, so the test set is not scored again.
 - **Results table.** Bold removed, and intervals added to the M ≥ 1.5 column.
 - **Reference-free measure.** New `src/fk_energy.py` reports, for test earthquake windows, the fraction of slow (< 250 m/s) and fast (> 1000 m/s) f-k energy kept in 1–45 Hz, and their ratio in dB (selectivity, independent of output scale). Methods that contain an f-k filter score high by construction.
 - **Training variance.** Not yet measured; listed as a limitation.
@@ -286,3 +286,12 @@ Run on the laptop as planned above; nothing was changed after seeing results. De
 - Seed spread (~0.04) exceeds the gap between strategies and the gap to the tuned filters. No interval against the tuned bandpass excludes zero. The conclusion does not change.
 - Training notes: fine-tune seed 2026 stopped early at epoch 21 (best validation loss 0.431). From-scratch seed 2027 reached its best validation loss (0.420) at epoch 93 of 100. Validation losses are not compared across seeds, because each seed draws a different internal validation split.
 - The original retraining code writes `None` for the architecture fields in the fine-tuned `.config` files. The architecture comes from the loaded `.h5` file and is unchanged; inference uses only the STFT fields.
+
+### Review round: wording and counts — 22 November 2026
+
+- TL;DR of four points added at the top of the README; details moved under "Results".
+- Limitations now state that the f-k re-tuning (250 → 1000 m/s) was prompted after the test sensitivity table had shown 1000 m/s at 0.640, even though the re-tuning used no test data. An old typo here ("30 non-test days") corrected to 29.
+- The two earthquake counts are explained: 35 / 6 / 19 clean-labelled earthquakes (training, synthetic test) versus all catalogue windows used for detection (36 validation, 165 non-test, 73 test).
+- The outdated "baseline tuning" limitation was rewritten for the 29-day tuning.
+- From-scratch versus fine-tuned is marked as not an equal-budget comparison.
+- The synthetic SI-SDR claim is marked as one seed. `src/synthetic_seeds.py` runs the same synthetic mixtures for every variant; it re-runs released and seed 2026 as a check that they reproduce the earlier numbers.
