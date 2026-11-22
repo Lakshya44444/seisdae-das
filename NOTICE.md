@@ -1,11 +1,6 @@
-# Credits and data provenance
+# Credits and licences
 
-The released GR model, its configuration and the RN.BAVN example trace are redistributed from Janis Heuel's [seisDAE](https://github.com/JanisHe/seisDAE/tree/26c9ba0fd70c532f0fb1a612d816cd32475b5036). The upstream project is licensed under GPL-3.0. The accompanying LICENSE is the upstream GPL-3.0 text. This repository's analysis and training code is supplied under that same license. The output-layer adaptation and the separately trained STEAD/FDSN pilot are project outputs.
-
-The DAS excerpts and metadata derive from Jiaxuan Li's [CaltechDATA P-phase dataset, version 1](https://doi.org/10.22002/n47vy-s0s65). The record metadata lists CC0 1.0. File names and original row offsets are retained in the event manifest. Credit Jiaxuan Li, Weiqiang Zhu, Ettore Biondi and Zhongwen Zhan for the accompanying research.
-
-The optional conventional training workflow accesses the STEAD example distributed with [EQTransformer](https://github.com/smousavi05/EQTransformer) and time series from the [EarthScope FDSN data service](https://service.earthscope.org/). The original full STEAD and FDSN waveforms for this pilot are downloaded separately. See the [training record](results/source_training/README.md) for station, UTC interval and upstream attribution.
-
-The additional Ridgecrest background excerpt derives from the SCEDC Ridgecrest DAS public collection. Cite Li et al., *Rapid Response to the 2019 Ridgecrest Earthquake With Distributed Acoustic Sensing*, https://doi.org/10.1029/2021AV000395. The source object, UTC time, byte ranges and per-range SHA-256 digests are in `data/noise_v2/continuous.json`. The source reader is the [SCEDC public cloud example](https://github.com/SCEDC/cloud/blob/master/pds_ridgecrest_das.ipynb). The derived block uses relative amplitudes for controlled mixing. The CaltechDATA CC0 statement above concerns the P-phase product. The adapted decoder parameters and V2 study code retain the upstream GPL-3.0 license.
-
-V3 includes additional derived CaltechDATA P windows from a second disjoint aperture and two further SCEDC hourly cuts. The event/row and byte-range manifests are distributed beside those data. STEAD conventional spectra are derived from the source IDs in the retained pilot manifest and the pinned EQTransformer sample file identified in results_v3/stead_source.json. Source licenses and the upstream GPL-3.0 attribution remain as above.
+- **seisDAE.** The network architecture, the training code (used unchanged through `scripts/train_seisdae.py`) and the released model in `models/gr_mixed_stft.*` come from Janis Heuel's [seisDAE](https://github.com/JanisHe/seisDAE/tree/26c9ba0fd70c532f0fb1a612d816cd32475b5036), licensed under GPL-3.0. `LICENSE` is that GPL-3.0 text, and this repository's code is released under the same licence.
+- **DAS data.** Ridgecrest DAS dataset of the Southern California Earthquake Data Center (`s3://scedc-pds/Ridgecrest_DAS`). Cite Li et al., *Rapid Response to the 2019 Ridgecrest Earthquake With Distributed Acoustic Sensing*, https://doi.org/10.1029/2021AV000395.
+- **Earthquake catalogue.** SCEDC FDSN event service, accessed through ObsPy.
+- **Earlier attempt.** Third-party data used by the earlier attempt in `archive/earlier_attempt/` are credited in `archive/earlier_attempt/docs/`.

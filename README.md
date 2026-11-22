@@ -1,75 +1,93 @@
-# Can a station denoiser recover fiber-optic earthquake arrivals?
+# Denoising DAS data with seisDAE
 
-> **V4:** seisDAE trained from scratch and tested on 60 s continuous Ridgecrest DAS windows. Data, methods, all results and limitations are in [README_v4.md](README_v4.md). The V3 results below are unchanged.
+**Objective.** Use seisDAE (Steinberg et al., 2023; code https://github.com/JanisHe/seisDAE) to denoise distributed acoustic sensing (DAS) data.
 
-We reproduced the released seisDAE station example, then tested the model on recorded DAS P arrivals. A scalar control exposes a pitfall: lowering amplitude earns ordinary SNR gain with identical waveform shape. On the fixed test the development-selected stretch improves shape, while a tuned spatial filter gives an even larger scale-invariant improvement at 0 dB. The 181-event cross-fitting experiment tests a different population.
+**What we did.** We trained the original seisDAE network from scratch on 60 s windows of the public Ridgecrest DAS dataset (California, 2020). We then compared it with standard filters on test days that were never used for training.
 
-![One recorded mixture and its attenuated copy](figures_v3/scalar.png)
+## Result in short
 
-**Read or present the project:** [Report PDF](reports_v3/report.pdf) · [Word](reports_v3/report.docx) · [Markdown](reports_v3/report.md) · [PowerPoint with notes](reports_v3/Presentation.pptx) · [PDF handout](reports_v3/Presentation.pdf) · [Timed talk and backup answers](reports_v3/TALK_SCRIPT.md).
+| | Raw data | Bandpass | f-k filter | seisDAE (released) | seisDAE (trained on DAS) | seisDAE (DAS) + f-k |
+|---|---|---|---|---|---|---|
+| Earthquake vs noise separation, ROC AUC [95% CI] | 0.563 [0.48, 0.64] | 0.566 | 0.602 [0.53, 0.68] | 0.601 | **0.638** [0.56, 0.71] | **0.671** [0.60, 0.74] |
+| Waveform shape at 0 dB input SNR, SI-SDR gain in dB [95% CI] | 0 | −0.82 | −4.14 | −8.51 | −4.37 [−7.77, −1.21] | −10.29 |
 
-## Main comparison
+1. **Released seisDAE does not transfer to DAS.** It had the lowest SI-SDR gain of the single-stage methods at every input SNR. Only the cascade scored lower, at −5 dB and above.
+2. **Training on DAS helps compared with the released model.** The DAS-trained model was 3.6–6.0 dB better in SI-SDR gain at every input SNR (paired, 14–17 of 19 test events).
+3. **Earthquake detection.**
+   - seisDAE trained on DAS against raw data: AUC +0.075, 95% CI [−0.007, 0.155]. The improvement is likely but **not statistically confirmed**.
+   - seisDAE followed by an f-k filter against raw data: AUC +0.108, CI [0.017, 0.200]. This improvement **is confirmed**.
+4. **Not shown.** No improvement in waveform shape at input SNR ≥ −5 dB, and no gain in detections at a low (5%) false-alarm rate.
 
-Mean ordinary / scale-invariant gain in dB, on the same 145 held-out earthquakes at 0 dB input. Classical revisions match context and tune settings. Neural revisions select stretch on out-of-fold development predictions.
+The full numbers are in `results/summary.md` and `results/detection_*.csv`. The ROC curves are in `results/roc.png`.
 
-| Method | Original gains (dB) | Revised gains (dB) |
-| --- | --- | --- |
-| Bandpass | -1.052 / -5.551 | 0.501 / -0.528 |
-| f-k | 1.738 / -0.743 | 1.380 / 0.760 |
-| Zero-shot | 0.078 / 0.053 | 0.491 / 0.256 |
-| Fine-tuned | 0.397 / 0.135 | 0.553 / 0.269 |
+## Method
 
-## Verify the Windows download
+1. **Data.** Ridgecrest DAS (SCEDC, AWS Open Data): 250 Hz, 1250 channels, 23 June – 29 July 2020. We use 96 neighbouring channels (rows 918–1013, 7.95 m spacing, about 760 m of fiber).
+2. **Windows.** Each window is 60 s, resampled to 100 Hz (96 × 6001 samples), after detrending, common-mode removal and a 0.5 Hz high-pass filter.
+   - Earthquake windows come from the SCEDC catalogue.
+   - Noise windows are random times with no catalogued earthquake.
+3. **Labelling.** Cars on the road next to the fiber give strong, slow, slanted signals. An earthquake reaches all channels almost at once. A window counts as an earthquake if at least 30% of its channels have SNR ≥ 10 dB after an f-k filter that keeps only apparent velocities above 1000 m/s, which removes traffic. This filter is used only for labelling; every method receives the unfiltered data.
+4. **Splits.** By day: day number modulo 5 gives 0, 1, 2 → train; 3 → validation; 4 → test. The result is 35 / 6 / 19 earthquakes, and 132 / 42 / 42 noise windows (plus 168 extra test noise windows for the detection test).
+5. **Model.** seisDAE U-Net exactly as released: STFT input of 100 × 121 × 2, depth 6, 8 base filters, 0.1 dropout, binary cross-entropy loss, Adam optimiser. We trained it **from scratch** with the original training code: 100 epochs, batch size 16, laptop CPU. The trained model's configuration is identical to the released one.
+6. **Baselines.** Bandpass and f-k settings were chosen on validation days only: 0.5–45 Hz and 250 m/s.
+7. **Tests.**
+   - **Synthetic:** 19 test earthquakes mixed with recorded test-day noise at −10 to 10 dB. Scored with SI-SDR (insensitive to scale) against the recorded earthquake.
+   - **Detection (main test):** 73 recorded test-day earthquakes and 210 noise windows, with no mixing. Scored with ROC AUC, with bootstrap intervals over windows and over days.
 
-After **Extract All**, open PowerShell in the extracted `seisdae-das` folder. With Python 3.12 installed, run:
+## Limitations
 
-```powershell
-py -3.12 scripts/package_release.py --check
-(Get-ChildItem src/v3 -Filter *.py).Count
+- **Test days were reused.** The test days were first used by an earlier version of this pipeline. The earthquake-labelling rule and the detection test were decided after that first result was seen. Only the addition of 168 noise windows was planned before its result.
+- **Small samples.** 6 validation, 19 synthetic-test and 73 detection-test earthquakes (50 of them below M1.5), over 7 test days.
+- **Weak baselines.** The baselines were tuned on the synthetic test, whose references still contain traffic. This favoured weak filtering (the f-k velocity sits at the edge of its grid).
+- **One fiber.** All data come from one fiber section, recorded over 37 days.
+
+Every decision, with its date and reason, including the earlier results, is in [`docs/decision_log.md`](docs/decision_log.md).
+
+## Repository layout
+
+```
+src/
+  config.json        all settings
+  das.py             read Ridgecrest SEG-Y windows, preprocessing
+  catalog.py         earthquake catalogue (SCEDC)
+  build.py           download windows, label, split, export training traces
+  methods.py         bandpass, f-k, seisDAE inference, scores
+  evaluate.py        synthetic and detection tests
+  detection_stats.py ROC, AUC, bootstrap
+  figures.py         figures and results/summary.md
+  collect.py         copy the trained model into models/
+  peek.py            quick-look plot of one window
+scripts/train_seisdae.py   runs the original seisDAE trainer
+models/                    released seisDAE model (+ trained DAS model)
+tests/                     offline tests
+results/                   final results
+docs/decision_log.md       dated record of every decision and result
+archive/earlier_attempt/   first attempt on 2 s Caltech DAS snippets (not used)
 ```
 
-The first command checks the SHA-256 manifest for every project file. The second prints **18** Python files, including `__init__.py`. Both checks work before installing TensorFlow.
+## How to run
 
-## Run the project
+Requires Python 3.13 and `pip install -r requirements.txt`. Then clone seisDAE into `vendor/seisDAE` and check out commit `26c9ba0`.
 
-From the extracted repository root on Linux or WSL2 with Conda installed:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y make pandoc libreoffice-writer libreoffice-impress poppler-utils
-conda env create -f environment.yml
-conda activate seisdae-das
-make reproduce
+```
+python -m src.das --inspect
+python -m src.catalog
+python -m src.build --download
+python -m src.build --reclassify
+python -m src.build --export
+python scripts/train_seisdae.py vendor/seisDAE --signals data/ridgecrest/upstream/signal --noise data/ridgecrest/upstream/noise --count 1894 --batch 16 --epochs 100 --threads 8 --name das_ridgecrest_v42
+python -m src.collect vendor/seisDAE --name das_ridgecrest_v42
+python -m src.build --extra-noise
+python -m src.evaluate --upstream vendor/seisDAE
+python -m src.figures
+python -m src.detection_stats
 ```
 
-Each run writes a fresh working copy under `runs/reproduction-*/`. The full CPU run verifies V2 and then regenerates the V3 experiments, executed analysis notebooks, report and deck, and checks numerical consistency. The prepared apertures, three recorded noise blocks, pretrained weights and derived conventional spectra are bundled. Installation needs network access. The normal rerun uses the bundled source cuts. On Windows, right-click the ZIP and choose **Extract All**. Open the report and slides directly in `reports_v3`. For the full build, use the setup above in Ubuntu on WSL2. To reproduce STEAD spectral extraction from the original public example, run `python -m src.v3.stead`. To redownload and extract the second DAS aperture, use `python -m src.v3.multi_data`. To refresh the two additional SCEDC cuts, use `python -m src.v3.noise --fetch`. These source commands require network access.
+To run the offline tests: `python -m unittest discover -s tests`.
 
-| Command | Purpose |
-|---|---|
-| `make test` | Run numerical, context, split and selection tests. |
-| `make check` | Check the report, README, slide text, notes, embedded figures and viva against the canonical results-driven content. |
-| `make assets` | Rebuild reports, figures and the deck using the existing CSVs. |
-| `bash run_v2.sh` | Rerun the historical numerical benchmark in the current checkout. |
-| `docker build -t seisdae-das .` then `docker run --rm seisdae-das` | Container entry point for the full run. |
+## References
 
-Python 3.12, TensorFlow 2.16.2 and the numerical dependencies are pinned. See [direct dependencies](requirements-v2.txt), [Linux constraints](constraints-linux-py312.txt) and [the frozen experiment configuration](src/v3/protocol.json). Notebook execution uses IPython in-process on socket-restricted hosts. Conventional Jupyter users can run `jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb`. For parallel V3 experiments on a multi-core machine, use `python scripts/reproduce.py --jobs 3`. Each independent run starts with an empty feature cache.
-
-## Source and verification
-
-The V3 release was reconstructed after the previous ZIP lost its final entries. All scientific modules, the figure and document generators, the experiment configuration, and regression tests are supplied here. The matched-budget objective and scratch-network experiments use newly measured results from the restored implementation. Historical V2 data are retained for comparison. See the final entry in [CHANGELOG.md](CHANGELOG.md) for the checks performed and differences from the earlier report.
-
-## Find the evidence
-
-| Question | Files in results_v3 |
-|---|---|
-| Were classical filters compared fairly? | classical_grid.csv, classical_selection.csv, classical_summary.csv, boundary.csv |
-| Did stretch transfer? | stretch_cv_events.csv, stretch_selection.csv, stretch_summary.csv, stretch_strata.csv |
-| How robust are measurement and intervals? | metric_checks.csv, clusters.csv, cluster_intervals.csv |
-| Did the noise source or surrogate target matter? | external_events.csv, external_summary.csv, sensitivity_summary.csv, sensitivity_site.csv |
-| Did objective and parameter count matter? | objective_fits.csv, objective_events.csv, objective_summary.csv |
-| Does more training data help? | crossfit_roles.csv, crossfit_summary.csv, scratch_fits.csv, scratch_summary.csv |
-| Why does the model act like the identity? | mechanism.csv, mask_example.npz, spectra.csv, stead_spectrum.csv |
-
-[Study guide and glossary](STUDY_GUIDE.md) · [40 viva questions](VIVA_NOTES.md) · [Reviewer critique](REVIEWER_2.md) · [Data card](DATA_CARD.md) · [Model card](MODEL_CARD.md) · [Changelog](CHANGELOG.md) · [Credits and GPL license](NOTICE.md).
-
-The fixed-test results use a field reference with residual noise. The all-event OOF results are a separate experiment and cannot be substituted for unseen-array validation. Earlier report versions are in `archive/`. A larger conventional STEAD/FDSN training run and an independent deployment study remain open.
+- Steinberg, A., et al. (2023). *Neural Network Based Denoising of Regional Seismic Waveforms and Impact on Analysis of North Korean Nuclear Tests.* Code: https://github.com/JanisHe/seisDAE
+- Atterholt, J., et al. (2022). A unified wavefield-partitioning approach for distributed acoustic sensing. *Geophys. J. Int.*, 228, 1410–1418. https://doi.org/10.1093/gji/ggab407
+- Lapins, S., et al. (2024). DAS-N2N: machine learning DAS signal denoising without clean data. *Geophys. J. Int.*, 236, 1026–1041. https://doi.org/10.1093/gji/ggad460
+- Li, J., et al. Rapid response to the 2019 Ridgecrest earthquake with distributed acoustic sensing. https://doi.org/10.1029/2021AV000395

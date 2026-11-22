@@ -1,3 +1,7 @@
+# Decision log
+
+This is the dated record of every decision and result. Entries before 22 November 2026 (afternoon) use the old layout. `src/v4/` is now `src/`, `README_v4.md` is now `README.md`, `results_v4/` is now `results/`, `data/v4/` is now `data/ridgecrest/`, and `scripts/upstream_train.py` is now `scripts/train_seisdae.py`. Everything from the earlier attempt is in `archive/earlier_attempt/`.
+
 # Study revision log
 
 The released benchmark is retained under `results/`. Commands below run from the repository root.
@@ -173,3 +177,7 @@ Limitations that must be reported:
 6. The original trainer splits its validation set at trace level, so neighbouring channels of one event can fall in both its training and validation sets. This affects only checkpoint selection, not the test.
 7. Predicted P arrivals are about 1–1.5 s early (uniform velocity model). All windows still contain the event.
 8. Small samples: 6 validation earthquakes, 19 synthetic-test earthquakes, 73 detection-test earthquakes (50 below M1.5).
+
+### Repository reorganised — 22 November 2026
+
+The earlier attempt (V1–V3: code, data, results, reports, extra READMEs, Docker/Make/CI files) moved to `archive/earlier_attempt/` without changes to any file content. The final pipeline moved from `src/v4/` to `src/`. The unused run-tag switch from the rejected V4.1 check was removed; common-mode removal is always on, as in every reported result. Downloads now go to `data/ridgecrest/` and outputs to `results/`. The CI now runs only the offline tests of the final pipeline. No method, setting or result changed.
