@@ -295,3 +295,17 @@ Run on the laptop as planned above; nothing was changed after seeing results. De
 - The outdated "baseline tuning" limitation was rewritten for the 29-day tuning.
 - From-scratch versus fine-tuned is marked as not an equal-budget comparison.
 - The synthetic SI-SDR claim is marked as one seed. `src/synthetic_seeds.py` runs the same synthetic mixtures for every variant; it re-runs released and seed 2026 as a check that they reproduce the earlier numbers.
+
+### Synthetic test for every seed — 22 November 2026
+
+`python -m src.synthetic_seeds`, same mixtures as the synthetic test (19 test earthquakes × 2 noise draws × 5 levels). Check: released and from-scratch seed 2026 reproduced the earlier per-event SI-SDR gains exactly (largest difference 0.00 dB).
+
+SI-SDR gain at 0 dB input SNR: released −8.51; from scratch −4.37 / −3.60 / −4.89 (seeds 2026 / 2027 / 2028); fine-tuned −2.95 / −2.41 / −2.38. Bandpass −0.82, f-k −4.14 (earlier run).
+
+- Minus released, over all levels: from scratch +3.24 to +6.11 dB, fine-tuned +5.39 to +7.35 dB; all paired intervals exclude zero (13–19 of 19 events).
+- Fine-tuned above from-scratch: all three fine-tuned runs above all three from-scratch runs at −5 to 10 dB; overlap at −10 dB. No paired test between the families.
+- Minus f-k: all six intervals exclude zero at −10 dB; at −5 dB only the three fine-tuned runs and from-scratch seed 2027 (lower bound +0.01); none at 0 dB or above.
+- Minus bandpass 0.5–45 Hz: no interval above zero at any level; all six intervals below zero at 5 and 10 dB.
+- Absolute gain at −10 dB is positive for every retrained run (+0.33 to +1.03 dB) but every interval includes zero.
+
+README: the one-seed caveat on the SI-SDR claim is replaced by these all-seed numbers; the fine-tuning result for waveform shape is added. The detection conclusion is unchanged.
