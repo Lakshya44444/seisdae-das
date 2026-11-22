@@ -18,15 +18,18 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("checkout", type=Path)
     p.add_argument("--name", default="das_ridgecrest")
+    p.add_argument("--as", dest="target", default="das_seisdae",
+                   help="Target name inside models/; e.g. variants/finetune_s2027 for extra runs")
     a = p.parse_args()
     for suffix in (".h5", ".config"):
         found = sorted(a.checkout.rglob(f"{a.name}{suffix}"), key=lambda f: f.stat().st_mtime)
         if not found:
             raise SystemExit(f"No {a.name}{suffix} under {a.checkout}")
-        target = ROOT / "models" / f"das_seisdae{suffix}"
+        target = ROOT / "models" / f"{a.target}{suffix}"
+        target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(found[-1], target)
         print(f"{found[-1]} -> {target}")
-    new = read_config(ROOT / "models/das_seisdae.config")
+    new = read_config(ROOT / "models" / f"{a.target}.config")
     old = read_config(ROOT / "models/gr_mixed_stft.config")
     for key in sorted(set(new) | set(old)):
         flag = "" if new.get(key) == old.get(key) else "   <- differs from released GR model"
