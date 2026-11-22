@@ -223,6 +223,45 @@ def download(limit=None):
     print(f"channel spacing used for f-k: {spacing:.2f} m")
 
 
+def extra_noise():
+    """Add more noise windows on test days only (detection test). Resumable.
+
+    New rows carry extra=True; the synthetic test keeps using the original
+    noise windows, so its pairs do not change.
+    """
+    s = CFG["selection"]
+    per_day, attempts = s["extra_test_noise_per_day"], s["extra_test_noise_attempts_per_day"]
+    m = manifest()
+    if "extra" not in m:
+        m["extra"] = False
+    _, screen, regional = load_catalogs()
+    rows, rng = block_rows(), np.random.default_rng(CFG["seed"] + 2)
+    days = pd.date_range(CFG["archive"]["first_day"], CFG["archive"]["last_day"], freq="D", tz="UTC")
+    added = []
+    for day in [d for d in days if split_of(d) == "test"]:
+        have = int(((m.kind == "noise") & (m.extra == True) & (m.start.dt.floor("D") == day)).sum())
+        found = 0
+        for _ in range(attempts):
+            if have + found >= per_day:
+                break
+            start = day + pd.Timedelta(seconds=int(rng.integers(0, 86400 - 120)))
+            end = start + pd.Timedelta(seconds=60)
+            name = f"noise_{start:%Y%m%d%H%M%S}"
+            if name in set(m.id) or other_events(screen, start - pd.Timedelta(seconds=60), end) or \
+               other_events(regional, start - pd.Timedelta(seconds=300), end):
+                continue
+            try:
+                fetch(name, start, rows)
+            except MissingData:
+                continue
+            found += 1
+            added.append(dict(id=name, kind="noise", split="test", start=start, extra=True))
+            m = pd.concat([m, pd.DataFrame(added[-1:])], ignore_index=True)
+            m.to_csv(MANIFEST, index=False)
+        print(f"{day:%Y-%m-%d}: {have + found} extra noise windows")
+    print(m[m.kind == "noise"].groupby(["split", "extra"]).size().to_string())
+
+
 def manifest():
     m = pd.read_csv(MANIFEST, parse_dates=["start"])
     m["start"] = pd.to_datetime(m.start, utc=True)
@@ -268,6 +307,7 @@ if __name__ == "__main__":
     p.add_argument("--export", action="store_true")
     p.add_argument("--stats", action="store_true", help="Event counts under several strong-SNR rules")
     p.add_argument("--reclassify", action="store_true", help="Re-apply config rules to downloaded events")
+    p.add_argument("--extra-noise", action="store_true", help="More noise windows on test days (detection test)")
     p.add_argument("--limit", type=int, help="Smoke test: this many candidates per kind and 5 days of noise")
     a = p.parse_args()
     if a.stats:
@@ -276,5 +316,7 @@ if __name__ == "__main__":
         download(a.limit)
     if a.reclassify:
         reclassify()
+    if a.extra_noise:
+        extra_noise()
     if a.export:
         export()
