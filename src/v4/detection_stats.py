@@ -6,7 +6,7 @@ Reads detection_rows.csv written by src.v4.evaluate. Earthquake windows and
 noise windows are both resampled in every bootstrap draw, so the intervals
 include the uncertainty of the noise-based thresholds. The same resampled
 windows are used for every method, so the differences are paired.
-Writes detection_auc.csv, detection_paired.csv and roc.png.
+Writes detection_auc.csv, detection_paired.csv, detection_paired_byday.csv\nand roc.png. The day bootstrap resamples whole test days as a robustness check.
 """
 
 import sys
@@ -56,6 +56,33 @@ def bootstrap(eq, nz, methods, seed):
     return {k: {m: np.array(v) for m, v in d.items()} for k, d in out.items()}
 
 
+def day_bootstrap(eq, nz, methods, days, seed):
+    """Robustness check: resample whole test days (aftershocks and traffic cluster in time)."""
+    rng = np.random.default_rng(seed)
+    unique = np.array(sorted(set(days.values())))
+    eday = np.array([days[w] for w in eq.index])
+    nday = np.array([days[w] for w in nz.index])
+    E, N = eq.to_numpy(), nz.to_numpy()
+    out = {m: [] for m in methods}
+    for _ in range(DRAWS):
+        pick = rng.choice(unique, size=len(unique), replace=True)
+        ie = np.concatenate([np.flatnonzero(eday == d) for d in pick])
+        inn = np.concatenate([np.flatnonzero(nday == d) for d in pick])
+        if len(ie) == 0 or len(inn) == 0:
+            continue
+        for j, m in enumerate(methods):
+            out[m].append(auc(E[ie, j], N[inn, j]))
+    return {m: np.array(v) for m, v in out.items()}
+
+
+def window_days(windows):
+    """Test day of every window, from the manifest."""
+    from .build import manifest
+
+    m = manifest().set_index("id")
+    return {w: m.loc[w, "start"].floor("D") for w in windows}
+
+
 def main(path):
     path = Path(path)
     rows = pd.read_csv(path)
@@ -80,6 +107,18 @@ def main(path):
                                    lo=lo, hi=hi, share_draws_above_zero=float(np.mean(d > 0))))
     paired = pd.DataFrame(paired)
     out = path.parent
+    days = window_days(list(eq.index) + list(nz.index))
+    dboot = day_bootstrap(eq, nz, methods, days, CFG["seed"] + 1)
+    byday = []
+    for a, b in PAIRS:
+        if a in methods and b in methods:
+            d = dboot[a] - dboot[b]
+            lo, hi = np.quantile(d, [0.025, 0.975])
+            byday.append(dict(comparison=f"{a} minus {b}", measure="auc", difference=point[a]["auc"] - point[b]["auc"],
+                              lo=lo, hi=hi, share_draws_above_zero=float(np.mean(d > 0)),
+                              test_days=len(set(days.values()))))
+    byday = pd.DataFrame(byday)
+    byday.to_csv(out / "detection_paired_byday.csv", index=False)
     summary.to_csv(out / "detection_auc.csv", index=False)
     paired.to_csv(out / "detection_paired.csv", index=False)
     roc(eq, nz, methods, out / "roc.png")
@@ -87,6 +126,9 @@ def main(path):
     print(summary.round(3).to_string(index=False))
     print()
     print(paired.round(3).to_string(index=False))
+    print()
+    print("Robustness: whole test days resampled")
+    print(byday.round(3).to_string(index=False))
 
 
 def roc(eq, nz, methods, out):
