@@ -127,7 +127,13 @@ def summarize(d, keys, measures, seed):
     return pd.DataFrame(rows)
 
 
+def original(m):
+    """Rows that are not extra test-noise windows (those serve the detection test only)."""
+    return m[~m["extra"].fillna(False).astype(bool)] if "extra" in m else m
+
+
 def synthetic(runner, m, settings):
+    m = original(m)
     ev = m[(m.kind == "strong") & (m.split == "test")]
     nz = m[(m.kind == "noise") & (m.split == "test")]
     rows, keep = [], {}
