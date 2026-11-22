@@ -193,3 +193,20 @@ A review raised seven points. The changes:
 5. **Pictures.** New `src/examples.py` shows raw, DAS-trained and cascade gathers for the three largest test earthquakes and two seeded noise windows.
 6. **Detection score.** It is now defined in the README.
 7. **Details.** The results table has a label in its first column, the Li et al. (2021) reference is complete, and the regenerable `results/example_*.npz` files (about 30 MB) were removed from the repository. The largest remaining files are two 14 MB models.
+
+### Detection re-tuning, first run — 22 November 2026
+
+Validation days (36 earthquake windows, 42 noise windows), detection AUC chose: bandpass 1–10 Hz (0.685), f-k 250 m/s (0.516; every f-k setting scored at or below the raw data, 0.566, on validation), cascade at 250 m/s (0.634). DAS-trained seisDAE scored 0.729 and released seisDAE 0.669.
+
+Test days (73 / 210):
+
+| Method | Test AUC [95% CI] |
+|---|---|
+| Raw | 0.563 [0.483, 0.641] |
+| Bandpass 1–10 Hz (chosen) | 0.633 [0.558, 0.708] |
+| f-k 250 m/s (chosen) | 0.602 |
+| f-k 500 / 1000 / 2000 m/s (not chosen) | 0.621 / 0.640 / 0.636 |
+| Cascade at 250 m/s (chosen) | 0.671 |
+| DAS-trained seisDAE | 0.638 |
+
+Tuned bandpass minus raw: +0.070 [0.022, 0.120]. Once the bandpass is tuned for detection, it matches DAS-trained seisDAE in AUC. The first version of `detection_tuning.py` did not save per-window scores, so seisDAE could not be compared with the tuned bandpass. The script now saves them, adds those comparisons and an exploratory magnitude table, and is run again.
