@@ -102,3 +102,11 @@ V4.0 was evaluated once on the held-out test days (24 earthquakes; output in `re
 The figures were inspected after this result. The test references were dominated by slow, slanted traffic arrivals, and the earthquake energy was weak. A likely cause is the V4.0 preprocessing: removing the median over a 760 m, 96-channel block also removes a local earthquake, which arrives almost simultaneously on every channel, while traffic, which arrives at different times, survives. `tests/test_v4.py::test_common_mode_removes_simultaneous_arrival` shows the effect on a synthetic arrival.
 
 V4.1 (`run.tag = "v41"`) turns common-mode removal off. It writes to separate folders (`data/v4/gathers_v41`, `results_v4_v41`, `figures_v4_v41`), so V4.0 stays reproducible. This change was made after the V4.0 test scores were seen, and it is reported as a post-hoc correction.
+
+### V4.1 common-mode check: rejected — 22 November 2026
+
+Three earthquakes were re-downloaded without common-mode removal. Their median SNR barely changed (18.3 → 18.4, 19.4 → 19.4 and 5.2 → 5.3 dB). The common-mode hypothesis is therefore rejected, and the configuration is back on the V4.0 data (`run.tag = ""`, common-mode removal on).
+
+### V4.2 traffic-robust event selection — 22 November 2026 (post-hoc)
+
+The same check showed that a traffic-dominated window (eq_39268871, median SNR 5.3 dB) passed the 30%-at-10-dB rule. Energy SNR cannot tell traffic from an earthquake. Selection, training-channel choice and scoring-channel choice now use the SNR of the fast component: an f-k fan filter keeps apparent velocities above 1000 m/s first, so slow traffic is removed before the SNR is measured. `tests/test_v4.py::test_fast_snr_ignores_traffic` shows the effect: a synthetic traffic arrival and a synthetic earthquake both have 11.3 dB energy SNR, but the fast-component SNR is 0.1 dB for the traffic and 15.4 dB for the earthquake. The gathers given to every method stay unfiltered. Because selection uses an f-k filter, the chosen references hold less slow energy than the V4.0 references, which may favour any method that removes slow energy. This change was made after the V4.0 test scores were seen.
