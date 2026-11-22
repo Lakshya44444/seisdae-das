@@ -181,3 +181,15 @@ Limitations that must be reported:
 ### Repository reorganised — 22 November 2026
 
 The earlier attempt (V1–V3: code, data, results, reports, extra READMEs, Docker/Make/CI files) moved to `archive/earlier_attempt/` without changes to any file content. The final pipeline moved from `src/v4/` to `src/`. The unused run-tag switch from the rejected V4.1 check was removed; common-mode removal is always on, as in every reported result. Downloads now go to `data/ridgecrest/` and outputs to `results/`. The CI now runs only the offline tests of the final pipeline. No method, setting or result changed.
+
+### Response to review — 22 November 2026
+
+A review raised seven points. The changes:
+
+1. **Baseline tuning wording.** The README called the baselines both "chosen on validation days" and "tuned on the synthetic test". Both are true: they were chosen on validation days with the synthetic SI-SDR criterion, and the README now says exactly that. New `src/detection_tuning.py` re-tunes bandpass, f-k and cascade on validation days by detection AUC, then reports every grid setting on the test days.
+2. **Label circularity.** Detection-test earthquakes are all catalogue events on test days without an overlapping catalogued event (`evaluate.detection`), so they do not depend on the f-k criterion. That criterion chose only the training signals and the synthetic-test references. The README now says so, and also notes that f-k-selected training signals may bias seisDAE towards fast signals.
+3. **AUC by magnitude.** `detection_stats` now writes `detection_by_magnitude.csv`, an exploratory split at M1.5 that was not planned in advance. For M < 1.5 (50 events) the raw AUC is 0.501. For M ≥ 1.5 (23 events), DAS-trained seisDAE scores 0.849 against 0.698 raw (difference +0.151, CI 0.030 to 0.281) and 0.671 for f-k (+0.179, CI 0.052 to 0.312).
+4. **Wording.** "Confirmed" became "suggestive", and "likely" became "not significant". A note on multiple comparisons was added.
+5. **Pictures.** New `src/examples.py` shows raw, DAS-trained and cascade gathers for the three largest test earthquakes and two seeded noise windows.
+6. **Detection score.** It is now defined in the README.
+7. **Details.** The results table has a label in its first column, the Li et al. (2021) reference is complete, and the regenerable `results/example_*.npz` files (about 30 MB) were removed from the repository. The largest remaining files are two 14 MB models.
