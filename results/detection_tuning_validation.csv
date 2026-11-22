@@ -1,0 +1,16 @@
+method,family,validation_auc,chosen
+Bandpass 0.5-45 Hz,Bandpass,0.5681216931216931,False
+Bandpass 1-10 Hz,Bandpass,0.6851851851851852,True
+Bandpass 1-20 Hz,Bandpass,0.5952380952380952,False
+Bandpass 2-30 Hz,Bandpass,0.5674603174603174,False
+Noisy,Noisy,0.5661375661375662,True
+f-k 1000 m/s,f-k,0.5119047619047619,False
+f-k 2000 m/s,f-k,0.47354497354497355,False
+f-k 250 m/s,f-k,0.5158730158730159,True
+f-k 500 m/s,f-k,0.49867724867724866,False
+seisDAE (DAS) + f-k 1000 m/s,seisDAE (DAS) + f-k,0.6183862433862434,False
+seisDAE (DAS) + f-k 2000 m/s,seisDAE (DAS) + f-k,0.6051587301587301,False
+seisDAE (DAS) + f-k 250 m/s,seisDAE (DAS) + f-k,0.6342592592592593,True
+seisDAE (DAS) + f-k 500 m/s,seisDAE (DAS) + f-k,0.6276455026455027,False
+seisDAE (DAS-trained),seisDAE (DAS-trained),0.7294973544973545,True
+seisDAE (released),seisDAE (released),0.6686507936507936,True
