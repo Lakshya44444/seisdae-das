@@ -1,0 +1,28 @@
+{
+  "channel_spacing_m": 7.95190464748436,
+  "das_model": "E:\\seisdae-das\\models\\das_seisdae.h5",
+  "upstream_check_released": 9.494347347960616e-08,
+  "upstream_check_das": 1.5089712516340518e-07,
+  "settings": {
+    "Bandpass": [
+      0.5,
+      45
+    ],
+    "Scalar": 0.8,
+    "f-k": 250,
+    "seisDAE (DAS) + f-k": 250,
+    "Noisy": null
+  },
+  "validation_events": 6,
+  "detection_earthquakes": 73,
+  "detection_noise_windows": 210,
+  "test_events": 19,
+  "test_noise_windows": 42,
+  "weak_test_events": 16,
+  "ms_per_trace": {
+    "Bandpass": 0.1013208335886399,
+    "f-k": 1.5196531245843896,
+    "seisDAE (released)": 2.4754333335295087,
+    "seisDAE (DAS-trained)": 2.4981760416267207
+  }
+}
