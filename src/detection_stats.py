@@ -6,7 +6,9 @@ Reads detection_rows.csv written by src.evaluate. Earthquake windows and
 noise windows are both resampled in every bootstrap draw, so the intervals
 include the uncertainty of the noise-based thresholds. The same resampled
 windows are used for every method, so the differences are paired.
-Writes detection_auc.csv, detection_paired.csv, detection_paired_byday.csv\nand roc.png. The day bootstrap resamples whole test days as a robustness check.
+Writes detection_auc.csv, detection_paired.csv, detection_paired_byday.csv,
+detection_by_magnitude.csv and roc.png. The day bootstrap resamples whole test
+days as a robustness check; the magnitude table is exploratory.
 """
 
 import sys
@@ -83,6 +85,30 @@ def window_days(windows):
     return {w: m.loc[w, "start"].floor("D") for w in windows}
 
 
+MAG_BINS = ((0.0, 1.5, "M < 1.5"), (1.5, 10.0, "M >= 1.5"))
+
+
+def by_magnitude(rows, eq, nz, methods, seed):
+    """Exploratory: AUC per catalogue-magnitude bin (same noise windows), window bootstrap."""
+    mag = rows[rows.label == "earthquake"].drop_duplicates("window").set_index("window").magnitude.reindex(eq.index)
+    out = []
+    for lo_m, hi_m, name in MAG_BINS:
+        sel = ((mag >= lo_m) & (mag < hi_m)).to_numpy()
+        boot = bootstrap(eq[sel], nz, methods, seed)["auc"]
+        for m in methods:
+            lo, hi = np.quantile(boot[m], [0.025, 0.975])
+            out.append(dict(bin=name, earthquakes=int(sel.sum()), kind="auc", item=m,
+                            value=auc(eq[m][sel], nz[m]), lo=lo, hi=hi))
+        for a, b in PAIRS:
+            if a in methods and b in methods:
+                d = boot[a] - boot[b]
+                lo, hi = np.quantile(d, [0.025, 0.975])
+                out.append(dict(bin=name, earthquakes=int(sel.sum()), kind="auc difference",
+                                item=f"{a} minus {b}", value=auc(eq[a][sel], nz[a]) - auc(eq[b][sel], nz[b]),
+                                lo=lo, hi=hi))
+    return pd.DataFrame(out)
+
+
 def main(path):
     path = Path(path)
     rows = pd.read_csv(path)
@@ -118,6 +144,8 @@ def main(path):
                               lo=lo, hi=hi, share_draws_above_zero=float(np.mean(d > 0)),
                               test_days=len(set(days.values()))))
     byday = pd.DataFrame(byday)
+    bymag = by_magnitude(rows, eq, nz, methods, CFG["seed"] + 2)
+    bymag.to_csv(out / "detection_by_magnitude.csv", index=False)
     byday.to_csv(out / "detection_paired_byday.csv", index=False)
     summary.to_csv(out / "detection_auc.csv", index=False)
     paired.to_csv(out / "detection_paired.csv", index=False)
@@ -129,6 +157,9 @@ def main(path):
     print()
     print("Robustness: whole test days resampled")
     print(byday.round(3).to_string(index=False))
+    print()
+    print("Exploratory: AUC by catalogue magnitude (same noise windows)")
+    print(bymag.round(3).to_string(index=False))
 
 
 def roc(eq, nz, methods, out):
