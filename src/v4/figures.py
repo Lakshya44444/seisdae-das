@@ -101,6 +101,17 @@ def table():
                   "| Method | Median channel SNR (dB) | Channels >= 10 dB | Neighbour coherence |", "|---|---|---|---|"]
         for r in f.itertuples():
             lines.append(f"| {r.method} | {r.median_snr_db:.2f} | {r.channels_10db:.2f} | {r.coherence:.3f} |")
+    if (OUT / "detection_summary.csv").exists():
+        d = pd.read_csv(OUT / "detection_summary.csv").set_index("method").reindex(ORDER).dropna(how="all").reset_index()
+        lines += ["", "## Detection test on recorded test-day data (main result)", "",
+                  f"Earthquake windows: {int(d.earthquakes.iloc[0])}; noise windows: {int(d.noise_windows.iloc[0])}. "
+                  "Thresholds are set on the noise windows of each method.", "",
+                  "| Method | Detected at 5% false alarm [95% CI] | Detected at 10% false alarm [95% CI] | "
+                  "Median ratio, earthquakes (dB) | Median ratio, noise (dB) |", "|---|---|---|---|---|"]
+        for r in d.itertuples():
+            lines.append(f"| {r.method} | {r.detected_fa5:.2f} [{r.detected_fa5_lo:.2f}, {r.detected_fa5_hi:.2f}] | "
+                         f"{r.detected_fa10:.2f} [{r.detected_fa10_lo:.2f}, {r.detected_fa10_hi:.2f}] | "
+                         f"{r.median_earthquake_db:.2f} | {r.median_noise_db:.2f} |")
     lines += ["", f"Median CPU time per trace (ms): {run['ms_per_trace']}"]
     (OUT / "summary.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
