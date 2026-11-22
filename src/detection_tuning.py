@@ -1,6 +1,13 @@
-"""Re-tune the baselines for detection on validation days, then report every setting on test days.
+"""Re-tune the baselines for detection on non-test days, then report every setting on test days.
 
-  python -m src.detection_tuning
+  python -m src.detection_tuning                     tune on validation days (6 strong earthquakes)
+  python -m src.detection_tuning --tune-on non-test  tune on train + validation days (30 days)
+
+Bandpass and f-k have no trained parameters, so train days are fair tuning data
+for them. The cascade velocity is also scored on train days, where seisDAE has
+seen part of the data; that choice is marked as optimistic. A leave-one-day-out
+count shows how stable each choice is. If results/detection_tuning_rows.csv
+already holds the test scores, they are reused instead of recomputed.
 
 The frozen settings in results/run.json were chosen with the synthetic SI-SDR
 criterion. Here every bandpass band, f-k velocity and cascade velocity of the
@@ -39,10 +46,12 @@ def candidates(runner, x):
     return out
 
 
-def score(runner, m, split):
+def score(runner, m, splits):
     overlap = m["overlap"].fillna(0) if "overlap" in m else pd.Series(0, index=m.index)
-    groups = (("earthquake", m[(m.kind != "noise") & (m.split == split) & (overlap == 0)]),
-              ("noise", m[(m.kind == "noise") & (m.split == split)]))
+    inside = m.split.isin(splits)
+    groups = (("earthquake", m[(m.kind != "noise") & inside & (overlap == 0)]),
+              ("noise", m[(m.kind == "noise") & inside]))
+    split = "+".join(splits)
     rows = []
     for label, group in groups:
         for k, r in enumerate(group.itertuples()):
@@ -64,20 +73,54 @@ def family(method):
     return method
 
 
-def main():
+def choose(eq, nz):
+    table = pd.DataFrame([dict(method=c, family=family(c), auc=auc(eq[c], nz[c])) for c in eq.columns])
+    return table, table.loc[table.groupby("family").auc.idxmax()].set_index("family").method.to_dict()
+
+
+def leave_one_day_out(eq, nz, m):
+    """How often each setting is chosen when one tuning day at a time is left out."""
+    day = m.set_index("id").start.dt.floor("D")
+    eday, nday = day.reindex(eq.index).to_numpy(), day.reindex(nz.index).to_numpy()
+    counts = {}
+    days = sorted(set(eday) | set(nday))
+    folds = 0
+    for d in days:
+        if (eday != d).sum() == 0 or (nday != d).sum() == 0:
+            continue
+        folds += 1
+        _, best = choose(eq[eday != d], nz[nday != d])
+        for method in best.values():
+            counts[method] = counts.get(method, 0) + 1
+    return pd.DataFrame([dict(method=k, family=family(k), chosen_in=v, of_folds=folds) for k, v in counts.items()],
+                        columns=["method", "family", "chosen_in", "of_folds"])
+
+
+def main(tune_on):
     m = manifest()
     runner = Runner(ROOT / "models/das_seisdae.h5", geometry()[2])
+    splits = ["validation"] if tune_on == "validation" else ["train", "validation"]
+    tag = "" if tune_on == "validation" else "_nontest"
 
-    veq, vnz, _ = score(runner, m, "validation")
-    val = pd.DataFrame([dict(method=c, family=family(c), validation_auc=auc(veq[c], vnz[c])) for c in veq.columns])
-    best = val.loc[val.groupby("family").validation_auc.idxmax()].set_index("family").method.to_dict()
+    veq, vnz, _ = score(runner, m, splits)
+    val, best = choose(veq, vnz)
+    val = val.rename(columns={"auc": "tuning_auc"})
     val["chosen"] = val.method.isin(best.values())
-    val.to_csv(OUT / "detection_tuning_validation.csv", index=False)
-    print(f"validation: {len(veq)} earthquake windows, {len(vnz)} noise windows")
+    stable = leave_one_day_out(veq, vnz, m)
+    val = val.merge(stable[["method", "chosen_in", "of_folds"]], on="method", how="left").fillna({"chosen_in": 0})
+    val.to_csv(OUT / f"detection_tuning_validation{tag}.csv", index=False)
+    print(f"tuning on {'+'.join(splits)}: {len(veq)} earthquake windows, {len(vnz)} noise windows")
     print(val.sort_values(["family", "method"]).round(3).to_string(index=False))
 
-    teq, tnz, rows = score(runner, m, "test")
-    rows.to_csv(OUT / "detection_tuning_rows.csv", index=False)
+    cached = OUT / "detection_tuning_rows.csv"
+    if cached.exists() and set(pd.read_csv(cached).method) >= set(veq.columns):
+        rows = pd.read_csv(cached)
+        print(f"test scores reused from {cached.name}")
+        teq = rows[rows.label == "earthquake"].pivot(index="window", columns="method", values="stat_db")
+        tnz = rows[rows.label == "noise"].pivot(index="window", columns="method", values="stat_db")
+    else:
+        teq, tnz, rows = score(runner, m, ["test"])
+        rows.to_csv(cached, index=False)
     methods = list(teq.columns)
     boot = bootstrap(teq, tnz, methods, CFG["seed"])["auc"]
     sens = []
@@ -86,7 +129,7 @@ def main():
         sens.append(dict(method=c, family=family(c), chosen_on_validation=c in best.values(),
                          test_auc=auc(teq[c], tnz[c]), lo=lo, hi=hi))
     sens = pd.DataFrame(sens)
-    sens.to_csv(OUT / "detection_sensitivity_test.csv", index=False)
+    sens.to_csv(OUT / f"detection_sensitivity_test{tag}.csv", index=False)
     print(f"\ntest: {len(teq)} earthquake windows, {len(tnz)} noise windows")
     print(sens.sort_values(["family", "method"]).round(3).to_string(index=False))
 
@@ -101,7 +144,7 @@ def main():
         paired.append(dict(comparison=f"{a} minus {b}", difference=auc(teq[a], tnz[a]) - auc(teq[b], tnz[b]),
                            lo=lo, hi=hi, share_draws_above_zero=float(np.mean(d > 0))))
     paired = pd.DataFrame(paired)
-    paired.to_csv(OUT / "detection_retuned_paired.csv", index=False)
+    paired.to_csv(OUT / f"detection_retuned_paired{tag}.csv", index=False)
     print()
     print(paired.round(3).to_string(index=False))
 
@@ -121,10 +164,14 @@ def main():
             bymag.append(dict(bin=name, earthquakes=int(sel.sum()), item=f"{a} minus {c}",
                               value=auc(teq[a][sel], tnz[a]) - auc(teq[c][sel], tnz[c]), lo=lo, hi=hi))
     bymag = pd.DataFrame(bymag)
-    bymag.to_csv(OUT / "detection_retuned_by_magnitude.csv", index=False)
+    bymag.to_csv(OUT / f"detection_retuned_by_magnitude{tag}.csv", index=False)
     print("\nExploratory: AUC by catalogue magnitude, re-tuned settings")
     print(bymag.round(3).to_string(index=False))
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--tune-on", choices=("validation", "non-test"), default="validation")
+    main(p.parse_args().tune_on)
