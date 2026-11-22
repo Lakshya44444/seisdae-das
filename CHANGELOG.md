@@ -114,3 +114,19 @@ The same check showed that a traffic-dominated window (eq_39268871, median SNR 5
 ### V4.2 detection test — 22 November 2026 (post-hoc)
 
 Following the practice of DAS denoising studies that have no clean ground truth (detections in Atterholt et al. 2022; event SNR on real data in Lapins et al. 2024), V4.2 adds a detection test on recorded test-day data. Positives are every downloaded test-day earthquake window without an overlapping catalogued event. Negatives are every test-day noise window. The statistic is the median over channels of the power ratio between 20 s after the predicted P and the pre-P window. It ignores overall scale. Each method gets its own threshold, set on the noise windows at 5% and 10% false-alarm rate, and the score is the fraction of earthquakes above that threshold, with event-bootstrap intervals. This test needs no reference waveform. It was added after the V4.0 scores were seen, and it is reported as the main V4.2 result next to the synthetic test.
+
+### V4.2 detection statistics — 22 November 2026
+
+`python -m src.v4.detection_stats` computes ROC curves, AUC, and detection rates at 5% and 10% false alarm. Its bootstrap resamples both the earthquake and the noise windows, paired across methods, with 5000 draws. On the V4.2 test (73 earthquake windows, 42 noise windows):
+
+| Method | AUC [95% CI] |
+|---|---|
+| Noisy | 0.58 [0.48, 0.69] |
+| f-k | 0.65 [0.54, 0.75] |
+| seisDAE (released) | 0.63 [0.52, 0.73] |
+| seisDAE (DAS-trained) | 0.68 [0.57, 0.78] |
+| seisDAE (DAS) + f-k | 0.71 [0.61, 0.80] |
+
+AUC difference, DAS-trained seisDAE minus Noisy: +0.10 [−0.005, 0.20]; 97% of draws are above zero. DAS-trained minus f-k: +0.03 [−0.08, 0.15]. f-k minus Noisy: +0.07 [0.01, 0.12]. Once the threshold uncertainty is included, the detection rates at a single false-alarm rate have wide intervals. The 5% and 10% values in `detection_summary.csv` should not be read alone.
+
+Exploratory split, not pre-specified, AUC by catalogue magnitude: for M < 1.5 (50 events), Noisy 0.52, f-k 0.62, DAS-trained 0.59, cascade 0.67. For M >= 1.5 (23 events), Noisy 0.71, f-k 0.71, DAS-trained 0.88, cascade 0.79.
