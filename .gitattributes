@@ -1,0 +1,8 @@
+*.config binary
+*.h5 binary
+*.npz binary
+*.npy binary
+*.docx binary
+*.pptx binary
+*.pdf binary
+*.png binary

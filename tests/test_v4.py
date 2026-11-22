@@ -139,6 +139,13 @@ class Scores(unittest.TestCase):
         _, y = istft(z, **m.spec)
         self.assertTrue(np.allclose(y[:, :6001], x - x.mean(1, keepdims=True), atol=1e-4))
 
+    def test_config_with_windows_line_endings(self):
+        raw = (ROOT / "models/gr_mixed_stft.config").read_bytes()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "crlf.config"
+            path.write_bytes(raw.replace(b"\n", b"\r\n"))
+            self.assertEqual(methods.read_config(path), methods.read_config(ROOT / "models/gr_mixed_stft.config"))
+
     def test_pairs_deterministic(self):
         ev = pd.DataFrame(dict(id=["a", "b", "c"]))
         nz = pd.DataFrame(dict(id=["n1", "n2", "n3", "n4"]))
