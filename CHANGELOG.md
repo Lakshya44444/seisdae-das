@@ -138,3 +138,24 @@ With 42 noise windows the AUC intervals were wide. Before any new result is comp
 - `python -m src.v4.build --extra-noise` adds up to 24 noise windows per test day (seed 2028, same catalogue screening), marked `extra=True`. Nothing else changes: model, frozen settings, earthquake windows, and the synthetic and field tests. The synthetic test keeps the original 42 noise windows.
 - Main analysis, decided now: AUC with a paired bootstrap over earthquake and noise windows (5000 draws) for DAS-trained seisDAE minus Noisy, and for DAS-trained seisDAE minus f-k, using all test noise windows. Every method and both comparisons are reported, whatever the outcome.
 - The magnitude split stays exploratory.
+
+### V4.2 final detection result (pre-registered analysis) — 22 November 2026
+
+73 test earthquake windows and 210 test noise windows (42 original plus 168 extra). Paired bootstrap with 5000 draws over both window sets.
+
+| Method | AUC [95% CI] | Detected at 5% FA | Detected at 10% FA |
+|---|---|---|---|
+| Noisy | 0.563 [0.483, 0.641] | 0.096 | 0.192 |
+| Bandpass | 0.566 [0.485, 0.644] | 0.110 | 0.164 |
+| f-k | 0.602 [0.525, 0.678] | 0.123 | 0.178 |
+| seisDAE (released) | 0.601 [0.524, 0.675] | 0.151 | 0.260 |
+| seisDAE (DAS-trained) | 0.638 [0.561, 0.714] | 0.082 | 0.233 |
+| seisDAE (DAS) + f-k | 0.671 [0.599, 0.742] | 0.027 | 0.219 |
+
+Pre-registered comparisons, AUC difference [95% CI], share of draws above zero:
+- DAS-trained seisDAE minus Noisy: +0.075 [−0.007, 0.155], 0.965. Not resolved at the 95% level.
+- DAS-trained seisDAE minus f-k: +0.036 [−0.049, 0.121], 0.79. Not resolved.
+
+Secondary: cascade minus Noisy +0.108 [0.017, 0.200]; cascade minus f-k +0.070 [−0.002, 0.143].
+
+Reading: the denoisers raise the overall separation (AUC) but also raise the statistic on some noise windows (median noise ratio 1.2 dB raw, 5.6 dB after DAS-trained seisDAE), so at low false-alarm rates they detect no more earthquakes than the raw data. The larger effect seen with 42 noise windows did not hold with 210.
