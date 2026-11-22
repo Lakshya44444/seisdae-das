@@ -159,3 +159,17 @@ Pre-registered comparisons, AUC difference [95% CI], share of draws above zero:
 Secondary: cascade minus Noisy +0.108 [0.017, 0.200]; cascade minus f-k +0.070 [−0.002, 0.143].
 
 Reading: the denoisers raise the overall separation (AUC) but also raise the statistic on some noise windows (median noise ratio 1.2 dB raw, 5.6 dB after DAS-trained seisDAE), so at low false-alarm rates they detect no more earthquakes than the raw data. The larger effect seen with 42 noise windows did not hold with 210.
+
+### Audit of V4 — 22 November 2026
+
+Checked and found correct: SEG-Y byte offsets (match 24 checksummed V3 downloads), hour-file timing (trace headers), channel-to-coordinate mapping (`das_info.csv` index column), window trimming after resampling, the seisDAE inference adapter (relative peak error ≤ 1.8e-7 against the original `predict`), train/validation/test day separation (no test-day trace in training), synthetic mixing level, SI-SDR scale invariance, the f-k fan-filter geometry (tests), the detection statistic, and the bootstrap pairing.
+
+Limitations that must be reported:
+1. The test days were used for V4.0, and the V4.2 selection change and the detection test were introduced after the V4.0 test scores were seen. V4.2 is therefore not a fully untouched held-out evaluation. Only the noise-window extension was fixed in advance.
+2. The window bootstrap treats windows as independent. Aftershocks and traffic cluster in time, and there are only 7 test days. `detection_stats` now also reports a day-block bootstrap as a robustness check.
+3. Baseline settings were chosen by synthetic SI-SDR against references that contain traffic. That criterion favours weak filtering: bandpass chose its widest band, and f-k chose the lowest velocity of the grid (250 m/s, at the grid edge). The baselines in the detection test were not tuned for detection, and neither was seisDAE.
+4. Synthetic references contain traffic, so SI-SDR penalises traffic removal.
+5. The field-test SNR and coherence are not quality measures. Suppressing the pre-event window raises SNR, and f-k raises coherence by construction.
+6. The original trainer splits its validation set at trace level, so neighbouring channels of one event can fall in both its training and validation sets. This affects only checkpoint selection, not the test.
+7. Predicted P arrivals are about 1–1.5 s early (uniform velocity model). All windows still contain the event.
+8. Small samples: 6 validation earthquakes, 19 synthetic-test earthquakes, 73 detection-test earthquakes (50 below M1.5).
