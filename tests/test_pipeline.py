@@ -8,7 +8,7 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 
-from src import build, catalog, das, methods
+from src import build, catalog, das, fk_energy, methods
 from src.evaluate import detection_stat, pairs
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -168,6 +168,15 @@ class Scores(unittest.TestCase):
         self.assertAlmostEqual(detection_stat(x), detection_stat(0.1 * x), places=9)
         self.assertGreater(detection_stat(x), 15)
         self.assertLess(abs(detection_stat(rng.normal(size=(8, 6001)))), 1)
+
+    def test_fk_energy_regions(self):
+        t = np.arange(2050) / 100
+        offsets = np.arange(96) * 7.95
+        wave = lambda v: np.sin(2 * np.pi * 6 * (t[None, :] - offsets[:, None] / v))
+        slow, fast = fk_energy.regions(wave(30.0), 7.95)
+        self.assertGreater(slow, 50 * fast)
+        slow, fast = fk_energy.regions(wave(3000.0), 7.95)
+        self.assertGreater(fast, 50 * slow)
 
     def test_pairs_deterministic(self):
         ev = pd.DataFrame(dict(id=["a", "b", "c"]))
