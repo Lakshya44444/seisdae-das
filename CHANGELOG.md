@@ -130,3 +130,11 @@ Following the practice of DAS denoising studies that have no clean ground truth 
 AUC difference, DAS-trained seisDAE minus Noisy: +0.10 [−0.005, 0.20]; 97% of draws are above zero. DAS-trained minus f-k: +0.03 [−0.08, 0.15]. f-k minus Noisy: +0.07 [0.01, 0.12]. Once the threshold uncertainty is included, the detection rates at a single false-alarm rate have wide intervals. The 5% and 10% values in `detection_summary.csv` should not be read alone.
 
 Exploratory split, not pre-specified, AUC by catalogue magnitude: for M < 1.5 (50 events), Noisy 0.52, f-k 0.62, DAS-trained 0.59, cascade 0.67. For M >= 1.5 (23 events), Noisy 0.71, f-k 0.71, DAS-trained 0.88, cascade 0.79.
+
+### V4.2 detection test with more noise windows: plan fixed before running — 22 November 2026
+
+With 42 noise windows the AUC intervals were wide. Before any new result is computed, the plan is fixed as follows.
+
+- `python -m src.v4.build --extra-noise` adds up to 24 noise windows per test day (seed 2028, same catalogue screening), marked `extra=True`. Nothing else changes: model, frozen settings, earthquake windows, and the synthetic and field tests. The synthetic test keeps the original 42 noise windows.
+- Main analysis, decided now: AUC with a paired bootstrap over earthquake and noise windows (5000 draws) for DAS-trained seisDAE minus Noisy, and for DAS-trained seisDAE minus f-k, using all test noise windows. Every method and both comparisons are reported, whatever the outcome.
+- The magnitude split stays exploratory.
