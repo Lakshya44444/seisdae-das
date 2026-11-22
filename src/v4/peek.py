@@ -14,14 +14,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from .build import load_gather, manifest
-from .das import ROOT
+from .das import ROOT, SUFFIX
 
 FS = 100
 
 
 def main(ids):
     m = manifest().set_index("id")
-    out = ROOT / "figures_v4"
+    out = ROOT / f"figures_v4{SUFFIX}"
     out.mkdir(exist_ok=True)
     for name in ids:
         x, r = load_gather(name), m.loc[name]

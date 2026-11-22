@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from .das import CFG
 from .evaluate import FIG, OUT
 
 ORDER = ["Noisy", "Scalar", "Bandpass", "f-k", "seisDAE (released)", "seisDAE (DAS-trained)", "seisDAE (DAS) + f-k"]
@@ -75,7 +76,8 @@ def trace():
 def table():
     s = pd.read_csv(OUT / "synthetic_summary.csv")
     run = json.loads((OUT / "run.json").read_text())
-    lines = ["# V4 results (generated from results_v4/*.csv)", "",
+    lines = [f"# V4 results, run tag {CFG['run']['tag'] or '(none)'} (generated from {OUT.name}/*.csv)", "",
+             f"Common-mode removal: {CFG['run']['common_mode_removal']}.",
              f"Test earthquakes: {run['test_events']}; test noise windows: {run['test_noise_windows']}; "
              f"weak field events: {run['weak_test_events']}; validation earthquakes: {run['validation_events']}.",
              f"Frozen settings (validation days): {run['settings']}", ""]

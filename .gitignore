@@ -12,3 +12,5 @@ reports_v3/*.tmp
 data/v4/gathers/
 data/v4/upstream/
 results_v4/*_rows.csv
+data/v4/gathers_*/
+data/v4/upstream_*/

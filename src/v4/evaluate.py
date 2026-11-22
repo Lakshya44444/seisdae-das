@@ -23,10 +23,10 @@ import pandas as pd
 
 from . import build
 from .build import load_gather, manifest, channel_snr_db
-from .das import CFG, geometry
+from .das import CFG, SUFFIX, geometry
 from .methods import ROOT, SeisDAE, bandpass, coherence, fk, mix, scores
 
-OUT, FIG = ROOT / "results_v4", ROOT / "figures_v4"
+OUT, FIG = ROOT / f"results_v4{SUFFIX}", ROOT / f"figures_v4{SUFFIX}"
 E = CFG["evaluation"]
 
 
@@ -219,7 +219,7 @@ def run(das_model, upstream=None):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--das-model", type=Path, default=ROOT / "models/das_seisdae.h5")
+    p.add_argument("--das-model", type=Path, default=ROOT / f"models/das_seisdae{SUFFIX}.h5")
     p.add_argument("--upstream", help="Original seisDAE checkout for an adapter cross-check")
     a = p.parse_args()
     run(a.das_model, a.upstream)

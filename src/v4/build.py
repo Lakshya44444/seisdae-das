@@ -15,11 +15,11 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from .das import CFG, DATA, MissingData, block_rows, geometry, haversine_km, read_window
+from .das import CFG, DATA, SUFFIX, MissingData, block_rows, geometry, haversine_km, read_window
 
-GATHERS = DATA / "gathers"
-MANIFEST = DATA / "manifest.csv"
-UPSTREAM = DATA / "upstream"
+GATHERS = DATA / f"gathers{SUFFIX}"
+MANIFEST = DATA / f"manifest{SUFFIX}.csv"
+UPSTREAM = DATA / f"upstream{SUFFIX}"
 
 
 def split_of(time):

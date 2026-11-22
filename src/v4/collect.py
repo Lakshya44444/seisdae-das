@@ -11,6 +11,7 @@ import argparse
 import shutil
 from pathlib import Path
 
+from .das import SUFFIX
 from .methods import ROOT, read_config
 
 
@@ -23,10 +24,10 @@ def main():
         found = sorted(a.checkout.rglob(f"{a.name}{suffix}"), key=lambda f: f.stat().st_mtime)
         if not found:
             raise SystemExit(f"No {a.name}{suffix} under {a.checkout}")
-        target = ROOT / "models" / f"das_seisdae{suffix}"
+        target = ROOT / "models" / f"das_seisdae{SUFFIX}{suffix}"
         shutil.copy2(found[-1], target)
         print(f"{found[-1]} -> {target}")
-    new = read_config(ROOT / "models/das_seisdae.config")
+    new = read_config(ROOT / f"models/das_seisdae{SUFFIX}.config")
     old = read_config(ROOT / "models/gr_mixed_stft.config")
     for key in sorted(set(new) | set(old)):
         flag = "" if new.get(key) == old.get(key) else "   <- differs from released GR model"
