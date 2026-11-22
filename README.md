@@ -4,7 +4,16 @@
 
 **What we did.** We trained the original seisDAE network from scratch on 60 s windows of the public Ridgecrest DAS dataset (California, 2020). We then compared it with standard filters on test days that were not used for training or for tuning the final settings. The test days were, however, reused across versions of this pipeline (see Limitations).
 
-## Result in short
+## TL;DR
+
+- **Released seisDAE does not transfer to DAS.** Used as released, it distorts DAS waveforms more than any filter and detects earthquakes worse than the filters.
+- **Retraining on DAS helps** compared with the released model, both from scratch and by fine-tuning the released model.
+- **Retrained seisDAE is only as good as a tuned bandpass filter.** For detection it is level with a 1–10 Hz bandpass and an f-k filter (AUC about 0.63–0.64), not better, and it did not improve waveform shape.
+- **The spread between training seeds (about 0.04 AUC) is as large as any difference between methods.** Six retrained runs (3 from scratch, 3 fine-tuned) all lead to the same conclusion.
+
+Details follow.
+
+## Results
 
 **Detection test:** separating recorded earthquake windows (73) from noise windows (210) on test days. Settings were chosen by detection AUC on the 29 non-test days (165 earthquake windows, 174 noise windows). Each choice won in all 29 leave-one-day-out folds.
 
@@ -22,7 +31,7 @@ No method is a clear winner. The intervals overlap, and the paired differences b
 **Synthetic test:** waveform shape at 0 dB input SNR, as SI-SDR gain in dB (0 = unchanged). Raw 0, bandpass 0.5–45 Hz −0.82, f-k −4.14, released seisDAE −8.51, seisDAE trained on DAS −4.37 [−7.77, −1.21], cascade −10.29.
 
 1. **Released seisDAE does not transfer to DAS waveforms.** It had the lowest SI-SDR gain of the single-stage methods at every input SNR.
-2. **Training on DAS helps compared with the released model.** The DAS-trained model was 3.6–6.0 dB better in SI-SDR gain at every input SNR (paired, 14–17 of 19 test events).
+2. **Training on DAS helps compared with the released model.** The DAS-trained model (from scratch, seed 2026) was 3.6–6.0 dB better in SI-SDR gain at every input SNR (paired, 14–17 of 19 test events). This synthetic-test number comes from one seed only.
 3. **For detection, seisDAE trained on DAS is no better than a tuned bandpass or a tuned f-k filter.** All three gain about +0.07 AUC over the raw data. AUC differences [95% CI]:
    - tuned bandpass (1–10 Hz) minus raw data: +0.070 [0.022, 0.120];
    - tuned f-k (1000 m/s) minus raw data: +0.077 [0.012, 0.145];
@@ -58,6 +67,7 @@ No method is a clear winner. The intervals overlap, and the paired differences b
    - Mean over seeds: from scratch 0.640 (range 0.620–0.662), fine-tuned 0.632 (range 0.604–0.648). Tuned bandpass 0.633, tuned f-k 0.640.
    - The spread between seeds (about 0.04 AUC) is larger than the difference between the two training strategies (0.008) and than the difference from the tuned filters.
    - No run differs from the tuned bandpass with a 95% interval that excludes zero.
+   - This is not an equal-budget comparison. From-scratch runs train for a fixed 100 epochs; fine-tuning uses the original retraining defaults with early stopping (seed 2026 stopped at epoch 21).
    - Fine-tuning did not improve on training from scratch here. Starting from the released weights did not avoid the seed spread either (one fine-tuned run, 0.604, is level with the released model).
    - The best single run (from scratch, seed 2027, 0.662) is not used as the headline number, because it was not chosen in advance.
 
@@ -76,7 +86,9 @@ The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_
 3. **Choosing clean training earthquakes.** Cars on the road next to the fiber give strong, slow, slanted signals. An earthquake reaches all channels almost at once. To train seisDAE and to build synthetic-test references, we kept only earthquake windows where at least 30% of channels have SNR ≥ 10 dB after an f-k filter that keeps apparent velocities above 1000 m/s, which removes traffic. Every method receives unfiltered data.
    - **The detection test does not use this f-k criterion.** Its earthquakes are all downloaded catalogue events on test days without another catalogued event in the window.
    - The training signals were still chosen with an f-k criterion, so seisDAE may have learned to favour fast, f-k-like signals.
-4. **Splits.** By day: day number modulo 5 gives 0, 1, 2 → train; 3 → validation; 4 → test. The result is 35 / 6 / 19 earthquakes, and 132 / 42 / 42 noise windows (plus 168 extra test noise windows for the detection test).
+4. **Splits.** By day: day number modulo 5 gives 0, 1, 2 → train; 3 → validation; 4 → test.
+   - **Two kinds of earthquake counts.** The clean-labelled earthquakes (step 3) are 35 / 6 / 19 (train / validation / test). They are used for training and for the synthetic test. The detection test and the detection tuning use **all** downloaded catalogue earthquake windows instead: 36 on the 7 validation days, 165 on the 29 non-test days, 73 on the 7 test days. So "6 validation earthquakes" and "36 validation earthquake windows" refer to the same days with two different labelling rules.
+   - Noise windows: 132 / 42 / 42, plus 168 extra test noise windows for the detection test (210 in total).
 5. **Model.** seisDAE U-Net exactly as released: STFT input of 100 × 121 × 2, depth 6, 8 base filters, 0.1 dropout, binary cross-entropy loss, Adam optimiser. We trained it **from scratch** with the original training code: 100 epochs, batch size 16, laptop CPU. The trained model's configuration is identical to the released one. As a variant, we also **fine-tuned** the released model on the same traces with the original retraining code (its defaults; batch size 16). Each was run with seeds 2026, 2027 and 2028.
    - The fine-tuned model keeps the released architecture (loaded from the `.h5` file). The original retraining code leaves the architecture fields of its `.config` file empty (`None`). Inference reads only the STFT settings, which are filled in.
 6. **Baselines.** No setting is chosen on test days.
@@ -99,10 +111,10 @@ The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_
 
 - **Test days were reused.** The test days were first used by an earlier version of this pipeline. The earthquake-labelling rule and the detection test were decided after that first result was seen. Only the addition of 168 noise windows was planned before its result.
 - **Small samples.** 6 validation, 19 synthetic-test and 73 detection-test earthquakes (50 of them below M1.5), over 7 test days.
-- **Baseline tuning matters.** With the synthetic SI-SDR criterion (references contain traffic) the bandpass stayed almost open (0.5–45 Hz), and seisDAE then looked better than the baselines. With detection-based tuning on validation days (1–10 Hz), the advantage disappeared. Both versions are reported.
-- **Tuning data.** The 7 validation days alone (36 earthquake windows) gave an unstable f-k choice. The reported detection settings were therefore re-tuned on all 29 non-test days. Those choices were stable (29 of 29 leave-one-day-out folds), but the switch was made after the validation-only result was seen.
+- **Baseline tuning matters.** Tuned by synthetic SI-SDR on validation days (references contain traffic), the bandpass stayed almost open (0.5–45 Hz), and seisDAE then looked better than the baselines in detection. Tuned by detection AUC on the 29 non-test days (1–10 Hz bandpass, f-k 1000 m/s), the baselines are level with seisDAE. The detection numbers above use the second, detection-based tuning. Both versions are in `results/`.
+- **The f-k choice was switched after test results were seen.** Detection tuning on the 7 validation days alone first chose f-k at 250 m/s. The sensitivity table on test had already shown 1000 m/s at 0.640 before the re-tuning, and the validation choice not being the best on test is what prompted the re-tuning. The re-tuning itself used no test data: it used the 29 non-test days, chose 1000 m/s, and that choice won all 29 leave-one-day-out folds. The bandpass choice (1–10 Hz) was the same in both tunings.
 - **Noisy channels.** Single noisy channels are not masked. They survive seisDAE, and an f-k filter smears them into coherent artefacts.
-- **Training runs.** Three seeds each for training from scratch and for fine-tuning, all on the same 35 training earthquakes. The synthetic test and the f-k energy and picture analyses use only the first from-scratch run (seed 2026). Three seeds give a rough spread, not a precise one.
+- **Training runs.** Three seeds each for training from scratch and for fine-tuning, all on the same 35 training earthquakes. The f-k energy and picture analyses use only the first from-scratch run (seed 2026). Three seeds give a rough spread, not a precise one.
 - **Training length.** The from-scratch runs use a fixed 100 epochs. In the seed 2027 run the best validation loss came at epoch 93, so longer training might still help a little. Fine-tuning stopped early (seed 2026: epoch 21).
 - **Proxy metrics.** Detection AUC is a proxy. `python -m src.fk_energy` adds a reference-free measure: how much slow (traffic) energy a method removes compared with fast (earthquake) energy kept.
 - **Many comparisons.** Six methods, several tests and a magnitude split were compared. A single interval that barely excludes zero should be read as suggestive.
@@ -124,7 +136,8 @@ src/
   detection_stats.py ROC, AUC, bootstrap, AUC by magnitude
   detection_tuning.py re-tune baselines by detection AUC (validation or all non-test days)
   fk_energy.py       slow (traffic) energy removed vs fast (earthquake) energy kept
-  variants.py        released vs from-scratch vs fine-tuned seisDAE, several seeds
+  variants.py        released vs from-scratch vs fine-tuned seisDAE, several seeds (detection)
+  synthetic_seeds.py the same variants on the synthetic SI-SDR test
   examples.py        before/after pictures of recorded windows
   figures.py         figures and results/summary.md
   collect.py         copy the trained model into models/
@@ -176,6 +189,7 @@ Variants (fine-tuned released model, and more seeds):
 python scripts/train_seisdae.py vendor/seisDAE --signals data/ridgecrest/upstream/signal --noise data/ridgecrest/upstream/noise --count 1894 --batch 16 --threads 8 --seed 2026 --retrain-from models/gr_mixed_stft.h5 --name das_finetune_s2026
 python -m src.collect vendor/seisDAE --name das_finetune_s2026 --as variants/finetune_s2026
 python -m src.variants
+python -m src.synthetic_seeds
 ```
 
 To run the offline tests: `python -m unittest discover -s tests`.
