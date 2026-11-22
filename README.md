@@ -6,10 +6,10 @@
 
 ## TL;DR
 
-- **Released seisDAE does not transfer to DAS.** Used as released, it distorts DAS waveforms more than any filter and detects earthquakes worse than the filters.
-- **Retraining on DAS helps** compared with the released model, both from scratch and by fine-tuning the released model.
+- **Released seisDAE does not transfer to DAS.** Used as released, it distorts DAS waveforms more than any single filter, and its detection AUC (0.601) is below that of the tuned filters (difference not significant).
+- **Retraining on DAS helps compared with the released model.** In the synthetic test it was 3.6–6.0 dB better (one seed). In detection, the average AUC rose from 0.601 to 0.640 (from scratch) and 0.632 (fine-tuned); one fine-tuned seed (0.604) did not improve.
 - **Retrained seisDAE is only as good as a tuned bandpass filter.** For detection it is level with a 1–10 Hz bandpass and an f-k filter (AUC about 0.63–0.64), not better, and it did not improve waveform shape.
-- **The spread between training seeds (about 0.04 AUC) is as large as any difference between methods.** Six retrained runs (3 from scratch, 3 fine-tuned) all lead to the same conclusion.
+- **The spread between training seeds (about 0.04 AUC) is as large as the differences between methods.** Six retrained runs (3 from scratch, 3 fine-tuned) all lead to the same conclusion.
 
 Details follow.
 
