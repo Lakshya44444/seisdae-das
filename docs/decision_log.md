@@ -210,3 +210,17 @@ Test days (73 / 210):
 | DAS-trained seisDAE | 0.638 |
 
 Tuned bandpass minus raw: +0.070 [0.022, 0.120]. Once the bandpass is tuned for detection, it matches DAS-trained seisDAE in AUC. The first version of `detection_tuning.py` did not save per-window scores, so seisDAE could not be compared with the tuned bandpass. The script now saves them, adds those comparisons and an exploratory magnitude table, and is run again.
+
+### Detection re-tuning, comparison with the tuned bandpass — 22 November 2026
+
+The second run chose the same settings as the first. On test days:
+
+| Comparison | AUC difference [95% CI] |
+|---|---|
+| DAS-trained seisDAE minus bandpass 1–10 Hz | +0.005 [−0.068, 0.077] |
+| Cascade (250 m/s) minus bandpass 1–10 Hz | +0.038 [−0.040, 0.118] |
+| Bandpass 1–10 Hz minus raw | +0.070 [0.022, 0.120] |
+| M ≥ 1.5 only: DAS-trained seisDAE minus bandpass 1–10 Hz | +0.038 [−0.084, 0.169] (exploratory) |
+| M ≥ 1.5 only: bandpass 1–10 Hz minus raw | +0.113 [0.025, 0.214] (exploratory) |
+
+The README conclusion changed accordingly. Once the bandpass is tuned for detection on validation days, DAS-trained seisDAE is no better than it. The earlier statement that seisDAE plus f-k beat the raw data still holds (+0.108 [0.017, 0.200]), but the cascade does not beat the tuned bandpass.
