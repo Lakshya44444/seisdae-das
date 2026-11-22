@@ -94,3 +94,11 @@ During the first full download, candidates ranked 200–237 (M1.0–1.9) were al
 ### V4 event selection rule — 22 November 2026
 
 The first rule (at least 50% of channels with SNR >= 15 dB, overlapping events excluded) kept 3 train, 0 validation and 1 test earthquakes out of 273 downloaded. `python -m src.v4.build --stats` listed the event counts for 12 alternative rules. No denoising score existed at this point. The chosen rule is: at least 30% of channels with SNR >= 10 dB, overlapping catalogued events allowed. It gives 46 train, 8 validation and 24 test earthquakes and 2142 training traces. Training export now uses every qualifying channel (stride 1). Synthetic-test scores use only channels whose recorded reference has SNR >= 10 dB. Validation uses two noise draws per event.
+
+### V4.0 test result and diagnosis — 22 November 2026
+
+V4.0 was evaluated once on the held-out test days (24 earthquakes; output in `results_v4/` on the run machine). At 0 dB input SNR, the mean SI-SDR gain was −3.47 dB for DAS-trained seisDAE, −3.65 dB for f-k, −0.71 dB for bandpass and −9.91 dB for released seisDAE. The DAS-trained model beat the released model at every level (paired difference +6.2 to +7.1 dB, 20–22 of 24 events). No denoiser beat the unprocessed input on SI-SDR at 0 dB or above.
+
+The figures were inspected after this result. The test references were dominated by slow, slanted traffic arrivals, and the earthquake energy was weak. A likely cause is the V4.0 preprocessing: removing the median over a 760 m, 96-channel block also removes a local earthquake, which arrives almost simultaneously on every channel, while traffic, which arrives at different times, survives. `tests/test_v4.py::test_common_mode_removes_simultaneous_arrival` shows the effect on a synthetic arrival.
+
+V4.1 (`run.tag = "v41"`) turns common-mode removal off. It writes to separate folders (`data/v4/gathers_v41`, `results_v4_v41`, `figures_v4_v41`), so V4.0 stays reproducible. This change was made after the V4.0 test scores were seen, and it is reported as a post-hoc correction.
