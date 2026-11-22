@@ -29,6 +29,16 @@ class Archive(unittest.TestCase):
         self.assertEqual([p[1:] for p in pieces], [(das.PER_HOUR - 2500, 2500), (0, 2500)])
         self.assertEqual(pieces[1][0], pd.Timestamp("2020-06-24T18:00Z"))
 
+    def test_common_mode_removes_simultaneous_arrival(self):
+        t = np.arange(16010) / 250
+        quake = np.exp(-((t - 30) * 2) ** 2) * np.sin(2 * np.pi * 3 * t)
+        raw = np.tile(quake, (96, 1)) + 0.01 * np.random.default_rng(6).normal(size=(96, t.size))
+        energy = {}
+        for flag in (True, False):
+            with mock.patch.dict(das.CFG["run"], {"common_mode_removal": flag}):
+                energy[flag] = np.sum(das.preprocess(raw) ** 2)
+        self.assertLess(energy[True], 0.01 * energy[False])
+
     def test_window_length(self):
         def fake(start, seconds, rows):
             return np.random.default_rng(0).normal(size=(len(rows), int(round(seconds * 250))))
