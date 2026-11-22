@@ -309,3 +309,10 @@ SI-SDR gain at 0 dB input SNR: released −8.51; from scratch −4.37 / −3.60 
 - Absolute gain at −10 dB is positive for every retrained run (+0.33 to +1.03 dB) but every interval includes zero.
 
 README: the one-seed caveat on the SI-SDR claim is replaced by these all-seed numbers; the fine-tuning result for waveform shape is added. The detection conclusion is unchanged.
+
+### Review round: detection versus released, README split — 22 November 2026
+
+- `src/variants.py` now also reports each retrained run minus the released model (paired window bootstrap); `--stats-only` recomputes from `results/variants_rows.csv` without re-scoring. The earlier columns are unchanged (checked). Detection AUC minus released: from scratch +0.037 [−0.040, 0.118], +0.061 [−0.011, 0.135], +0.019 [−0.056, 0.095]; fine-tuned +0.042 [−0.016, 0.102], +0.003 [−0.055, 0.063], +0.047 [−0.008, 0.103]. No interval excludes zero, so "retraining helps" is now stated for SI-SDR only; for detection the README says the average rose but no run is significantly better.
+- README shortened to objective, TL;DR, one key-numbers table, conclusion, method, limitations and how to run. All detailed results moved unchanged to `docs/results.md`, with the metric named in each fine-tuning statement (SI-SDR versus detection AUC).
+- Conclusion wording: the bandpass was chosen on the 29 non-test days, not on validation days.
+- TL;DR adds the low-SNR result: at −10 dB every retrained run beats f-k in SI-SDR.
