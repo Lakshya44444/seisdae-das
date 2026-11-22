@@ -224,3 +224,13 @@ The second run chose the same settings as the first. On test days:
 | M ≥ 1.5 only: bandpass 1–10 Hz minus raw | +0.113 [0.025, 0.214] (exploratory) |
 
 The README conclusion changed accordingly. Once the bandpass is tuned for detection on validation days, DAS-trained seisDAE is no better than it. The earlier statement that seisDAE plus f-k beat the raw data still holds (+0.108 [0.017, 0.200]), but the cascade does not beat the tuned bandpass.
+
+### Response to second review — 22 November 2026
+
+- **Detection score.** It is now described as a known-time test: sample 1000 is the predicted P arrival in earthquake windows and the same 10 s mark in noise windows. The README notes that the score rewards any method that removes energy outside the earthquake band.
+- **Unreliable tuning.** It is stated plainly: the validation choice of f-k velocity was not the best on test. `detection_tuning --tune-on non-test` tunes bandpass and f-k on all 30 non-test days. These methods have no trained parameters, so train days are fair for them. The cascade velocity is marked optimistic, because seisDAE saw part of the train-day data. A leave-one-day-out count reports how stable each choice is. Cached test scores are reused, so the test set is not scored again.
+- **Results table.** Bold removed, and intervals added to the M ≥ 1.5 column.
+- **Reference-free measure.** New `src/fk_energy.py` reports, for test earthquake windows, the fraction of slow (< 250 m/s) and fast (> 1000 m/s) f-k energy kept in 1–45 Hz, and their ratio in dB (selectivity, independent of output scale). Methods that contain an f-k filter score high by construction.
+- **Training variance.** Not yet measured; listed as a limitation.
+- **Wording.** "Never used for training" became "not used for training or for tuning the final settings, but reused across pipeline versions". The untested spatial-coherence explanation is labelled as a hypothesis.
+- **Environment.** Python, TensorFlow and tf-keras versions, runtime, disk use and the origin of `--count` were added.

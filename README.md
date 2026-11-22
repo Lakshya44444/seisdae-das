@@ -2,20 +2,22 @@
 
 **Objective.** Use seisDAE (Steinberg et al., 2023; code https://github.com/JanisHe/seisDAE) to denoise distributed acoustic sensing (DAS) data.
 
-**What we did.** We trained the original seisDAE network from scratch on 60 s windows of the public Ridgecrest DAS dataset (California, 2020). We then compared it with standard filters on test days that were never used for training.
+**What we did.** We trained the original seisDAE network from scratch on 60 s windows of the public Ridgecrest DAS dataset (California, 2020). We then compared it with standard filters on test days that were not used for training or for tuning the final settings. The test days were, however, reused across versions of this pipeline (see Limitations).
 
 ## Result in short
 
 **Detection test:** separating recorded earthquake windows (73) from noise windows (210) on test days. Settings were chosen on validation days by detection AUC.
 
-| Method | ROC AUC [95% CI] | AUC, events with M ≥ 1.5 (23, exploratory) |
+| Method | ROC AUC [95% CI] | AUC, events with M ≥ 1.5 only (23 events, exploratory) [95% CI] |
 |---|---|---|
-| Raw data | 0.563 [0.483, 0.641] | 0.698 |
-| Bandpass 1–10 Hz | 0.633 [0.558, 0.708] | 0.811 |
-| f-k filter, 250 m/s | 0.602 [0.525, 0.678] | 0.671 |
-| seisDAE, released model | 0.601 [0.524, 0.675] | 0.824 |
-| **seisDAE trained on DAS** | **0.638** [0.561, 0.714] | **0.849** |
-| seisDAE trained on DAS + f-k 250 m/s | 0.671 [0.599, 0.742] | 0.759 |
+| Raw data | 0.563 [0.483, 0.641] | 0.698 [0.569, 0.817] |
+| Bandpass 1–10 Hz | 0.633 [0.558, 0.708] | 0.811 [0.688, 0.914] |
+| f-k filter, 250 m/s | 0.602 [0.525, 0.678] | 0.671 [0.540, 0.790] |
+| seisDAE, released model | 0.601 [0.524, 0.675] | 0.824 [0.718, 0.910] |
+| seisDAE trained on DAS | 0.638 [0.561, 0.714] | 0.849 [0.759, 0.920] |
+| seisDAE trained on DAS + f-k 250 m/s | 0.671 [0.599, 0.742] | 0.759 [0.653, 0.850] |
+
+No method is a clear winner. The intervals overlap, and the paired differences below include zero. The M ≥ 1.5 column rests on 23 events.
 
 **Synthetic test:** waveform shape at 0 dB input SNR, as SI-SDR gain in dB (0 = unchanged). Raw 0, bandpass 0.5–45 Hz −0.82, f-k −4.14, released seisDAE −8.51, seisDAE trained on DAS −4.37 [−7.77, −1.21], cascade −10.29.
 
@@ -30,6 +32,8 @@
 5. **Not shown.** No method improved waveform shape at input SNR ≥ −5 dB against the recorded references.
 
 **Conclusion.** The released seisDAE should not be used on DAS data without retraining. Retrained on DAS, it detects earthquakes about as well as a 1–10 Hz bandpass filter chosen on validation data, and not better. Neither was shown to improve waveform fidelity.
+
+A possible reason, which we have **not tested**, is that seisDAE processes each channel on its own and does not use the coherence across neighbouring DAS channels.
 
 The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_retuned_*.csv`, `detection_sensitivity_test.csv`). The figures are in `results/roc.png` and `results/figures/`.
 
@@ -51,7 +55,10 @@ The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_
 7. **Tests.**
    - **Synthetic:** 19 test earthquakes mixed with recorded test-day noise at −10 to 10 dB. Scored with SI-SDR (insensitive to scale) against the recorded earthquake.
    - **Detection (main test):** 73 recorded test-day earthquakes and 210 noise windows, with no mixing.
-     - **Score:** each method's output gets one number per window. That number is the median over the 96 channels of the power ratio, in dB, between the 20.5 s after the predicted P arrival and the 1–9 s before it.
+     - **Score:** each method's output gets one number per window. That number is the median over the 96 channels of the power ratio, in dB, between the window from 0.5 s before to 20 s after sample 1000 (10 s) and the 1–9 s window.
+     - **Sample 1000:** in an earthquake window this is the predicted P arrival, from the catalogue origin time and a 6 km/s straight-ray travel time. In a noise window it is the same fixed 10 s mark, with no event.
+     - **Known-time test:** this is a known-time detection test, not blind detection.
+     - **Bias:** the score rewards any method that removes energy outside the earthquake's frequency band, so it measures filtering as much as denoising.
      - **AUC:** the probability that a random earthquake window scores higher than a random noise window. Bootstrap intervals are computed over windows and over days.
    - **Pictures:** before/after examples are in `results/figures/` (`gather_synthetic.png`, `gather_field.png`, `trace.png`, `examples.png`).
 
@@ -60,6 +67,9 @@ The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_
 - **Test days were reused.** The test days were first used by an earlier version of this pipeline. The earthquake-labelling rule and the detection test were decided after that first result was seen. Only the addition of 168 noise windows was planned before its result.
 - **Small samples.** 6 validation, 19 synthetic-test and 73 detection-test earthquakes (50 of them below M1.5), over 7 test days.
 - **Baseline tuning matters.** With the synthetic SI-SDR criterion (references contain traffic) the bandpass stayed almost open (0.5–45 Hz), and seisDAE then looked better than the baselines. With detection-based tuning on validation days (1–10 Hz), the advantage disappeared. Both versions are reported.
+- **Unreliable tuning.** The validation days hold only 36 earthquake windows (6 strong). The validation choice of f-k velocity (250 m/s) was not the best on test (1000 m/s scored 0.640), so the chosen settings are not reliable. `python -m src.detection_tuning --tune-on non-test` re-tunes bandpass and f-k on all 30 non-test days, with a leave-one-day-out count of how often each setting wins.
+- **One training run.** seisDAE was trained once, from scratch, on 35 earthquakes. The spread between training runs (seeds) was not measured.
+- **Proxy metrics.** Detection AUC is a proxy. `python -m src.fk_energy` adds a reference-free measure: how much slow (traffic) energy a method removes compared with fast (earthquake) energy kept.
 - **Many comparisons.** Six methods, several tests and a magnitude split were compared. A single interval that barely excludes zero should be read as suggestive.
 - **Noisy references.** Synthetic references are recorded earthquakes that still contain traffic, so negative SI-SDR gains partly reflect removed traffic.
 - **One fiber.** All data come from one fiber section, recorded over 37 days.
@@ -77,7 +87,8 @@ src/
   methods.py         bandpass, f-k, seisDAE inference, scores
   evaluate.py        synthetic and detection tests
   detection_stats.py ROC, AUC, bootstrap, AUC by magnitude
-  detection_tuning.py re-tune baselines by detection AUC on validation days
+  detection_tuning.py re-tune baselines by detection AUC (validation or all non-test days)
+  fk_energy.py       slow (traffic) energy removed vs fast (earthquake) energy kept
   examples.py        before/after pictures of recorded windows
   figures.py         figures and results/summary.md
   collect.py         copy the trained model into models/
@@ -92,7 +103,18 @@ archive/earlier_attempt/   first attempt on 2 s Caltech DAS snippets (not used)
 
 ## How to run
 
-Requires Python 3.13 and `pip install -r requirements.txt`. Then clone seisDAE into `vendor/seisDAE` and check out commit `26c9ba0`.
+Tested on a Windows laptop, CPU only, with Python 3.13.2, TensorFlow 2.20 and tf-keras 2.20 (`pip install -r requirements.txt`). The pinned seisDAE code targets older TensorFlow and works here through tf-keras. Clone seisDAE into `vendor/seisDAE` and check out commit `26c9ba0`.
+
+Rough cost on that laptop:
+
+| Step | Time | Disk |
+|---|---|---|
+| Download | several hours (byte-range requests to AWS) | about 3 GB in `data/ridgecrest/` |
+| Training (100 epochs) | 30–80 min (17–47 s per epoch) | |
+| Evaluation | about 30 min | |
+| `detection_tuning` | 20–40 min | |
+
+`--count` in the training command is the number of signal traces printed by `python -m src.build --export` (1894 in our run).
 
 ```
 python -m src.das --inspect
@@ -107,6 +129,8 @@ python -m src.evaluate --upstream vendor/seisDAE
 python -m src.figures
 python -m src.detection_stats
 python -m src.detection_tuning
+python -m src.detection_tuning --tune-on non-test
+python -m src.fk_energy
 python -m src.examples
 ```
 
