@@ -234,3 +234,26 @@ The README conclusion changed accordingly. Once the bandpass is tuned for detect
 - **Training variance.** Not yet measured; listed as a limitation.
 - **Wording.** "Never used for training" became "not used for training or for tuning the final settings, but reused across pipeline versions". The untested spatial-coherence explanation is labelled as a hypothesis.
 - **Environment.** Python, TensorFlow and tf-keras versions, runtime, disk use and the origin of `--count` were added.
+
+### Tuning on non-test days, f-k energy measure, example figure — 22 November 2026
+
+- **Non-test tuning.** 29 days, 165 earthquake windows, 174 noise windows. Chosen: bandpass 1–10 Hz (AUC 0.659), f-k 1000 m/s (0.555), cascade 250 m/s (0.655). Each won all 29 leave-one-day-out folds. On test (scores reused from the earlier run):
+
+  | Comparison | AUC difference [95% CI] |
+  |---|---|
+  | f-k 1000 m/s minus raw | +0.077 [0.012, 0.145] |
+  | DAS-trained seisDAE minus f-k 1000 m/s | −0.002 [−0.088, 0.086] |
+  | Cascade minus f-k 1000 m/s | +0.032 [−0.032, 0.096] |
+
+  The bandpass comparisons are unchanged, because the same bandpass was chosen. The README now reports f-k at 1000 m/s.
+- **f-k energy (73 test earthquake windows).** Median fast and slow energy kept, and mean selectivity [95% CI]:
+
+  | Method | Fast kept | Slow kept | Selectivity |
+  |---|---|---|---|
+  | DAS-trained seisDAE | 0.112 | 0.166 | −1.74 dB [−2.70, −0.77] |
+  | Released seisDAE | 0.136 | 0.558 | −6.70 dB |
+  | Bandpass 1–10 Hz | 0.125 | 0.787 | −8.51 dB |
+  | f-k | 0.909 | 0.002 | +26.0 dB |
+  | Cascade | 0.116 | 0.002 | +16.0 dB |
+
+- **Example figure.** seisDAE suppresses noise windows, including traffic, but keeps noisy single channels. An f-k filter after seisDAE smears those channels into coherent artefacts. In earthquake windows the traffic largely remains after seisDAE.

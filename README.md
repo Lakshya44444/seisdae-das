@@ -6,13 +6,13 @@
 
 ## Result in short
 
-**Detection test:** separating recorded earthquake windows (73) from noise windows (210) on test days. Settings were chosen on validation days by detection AUC.
+**Detection test:** separating recorded earthquake windows (73) from noise windows (210) on test days. Settings were chosen by detection AUC on the 29 non-test days (165 earthquake windows, 174 noise windows). Each choice won in all 29 leave-one-day-out folds.
 
 | Method | ROC AUC [95% CI] | AUC, events with M ≥ 1.5 only (23 events, exploratory) [95% CI] |
 |---|---|---|
 | Raw data | 0.563 [0.483, 0.641] | 0.698 [0.569, 0.817] |
 | Bandpass 1–10 Hz | 0.633 [0.558, 0.708] | 0.811 [0.688, 0.914] |
-| f-k filter, 250 m/s | 0.602 [0.525, 0.678] | 0.671 [0.540, 0.790] |
+| f-k filter, 1000 m/s | 0.640 [0.565, 0.714] | 0.691 [0.564, 0.804] |
 | seisDAE, released model | 0.601 [0.524, 0.675] | 0.824 [0.718, 0.910] |
 | seisDAE trained on DAS | 0.638 [0.561, 0.714] | 0.849 [0.759, 0.920] |
 | seisDAE trained on DAS + f-k 250 m/s | 0.671 [0.599, 0.742] | 0.759 [0.653, 0.850] |
@@ -23,13 +23,25 @@ No method is a clear winner. The intervals overlap, and the paired differences b
 
 1. **Released seisDAE does not transfer to DAS waveforms.** It had the lowest SI-SDR gain of the single-stage methods at every input SNR.
 2. **Training on DAS helps compared with the released model.** The DAS-trained model was 3.6–6.0 dB better in SI-SDR gain at every input SNR (paired, 14–17 of 19 test events).
-3. **For detection, seisDAE trained on DAS is no better than a simple tuned bandpass.** AUC differences [95% CI]:
-   - tuned 1–10 Hz bandpass minus raw data: +0.070 [0.022, 0.120];
+3. **For detection, seisDAE trained on DAS is no better than a tuned bandpass or a tuned f-k filter.** All three gain about +0.07 AUC over the raw data. AUC differences [95% CI]:
+   - tuned bandpass (1–10 Hz) minus raw data: +0.070 [0.022, 0.120];
+   - tuned f-k (1000 m/s) minus raw data: +0.077 [0.012, 0.145];
    - seisDAE trained on DAS minus tuned bandpass: +0.005 [−0.068, 0.077];
+   - seisDAE trained on DAS minus tuned f-k: −0.002 [−0.088, 0.086];
    - seisDAE + f-k minus tuned bandpass: +0.038 [−0.040, 0.118];
-   - for the M ≥ 1.5 events, seisDAE trained on DAS minus tuned bandpass: +0.038 [−0.084, 0.169].
+   - seisDAE + f-k minus tuned f-k: +0.032 [−0.032, 0.096];
+   - for the M ≥ 1.5 events only, seisDAE trained on DAS minus tuned bandpass: +0.038 [−0.084, 0.169].
 4. **Small events are at chance.** 50 of the 73 test earthquakes are below M1.5. For them the raw data score AUC 0.50, and no method separates them reliably.
 5. **Not shown.** No method improved waveform shape at input SNR ≥ −5 dB against the recorded references.
+6. **Traffic versus earthquake energy (reference-free, `results/fk_energy_summary.csv`).** In the 73 test earthquake windows:
+   - DAS-trained seisDAE kept a median 11% of fast (> 1000 m/s) and 17% of slow (< 250 m/s) f-k energy. Its selectivity was −1.7 dB [−2.7, −0.8]: it lowers both and does not preferentially remove traffic.
+   - The 1–10 Hz bandpass scored −8.5 dB, because it also removes fast energy above 10 Hz.
+   - f-k (+26.0 dB) and the cascade (+16.0 dB) score high by construction.
+   - The fast region also contains fast noise, so this is an indication, not a clean signal measure.
+7. **What the pictures show (`results/figures/examples.png`, 3 earthquakes and 2 noise windows).**
+   - In earthquake windows, the DAS-trained seisDAE output still contains most of the traffic.
+   - In noise windows, seisDAE suppressed most of the noise, including traffic, but kept noisy single channels.
+   - Applying f-k after seisDAE spread the energy of those noisy channels into coherent-looking artefacts. This is a likely cause of the cascade's false alarms. It is an observation from two windows, not a test.
 
 **Conclusion.** The released seisDAE should not be used on DAS data without retraining. Retrained on DAS, it detects earthquakes about as well as a 1–10 Hz bandpass filter chosen on validation data, and not better. Neither was shown to improve waveform fidelity.
 
@@ -48,10 +60,12 @@ The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_
    - The training signals were still chosen with an f-k criterion, so seisDAE may have learned to favour fast, f-k-like signals.
 4. **Splits.** By day: day number modulo 5 gives 0, 1, 2 → train; 3 → validation; 4 → test. The result is 35 / 6 / 19 earthquakes, and 132 / 42 / 42 noise windows (plus 168 extra test noise windows for the detection test).
 5. **Model.** seisDAE U-Net exactly as released: STFT input of 100 × 121 × 2, depth 6, 8 base filters, 0.1 dropout, binary cross-entropy loss, Adam optimiser. We trained it **from scratch** with the original training code: 100 epochs, batch size 16, laptop CPU. The trained model's configuration is identical to the released one.
-6. **Baselines.** All settings are chosen on validation days only.
-   - Synthetic test: SI-SDR picked a 0.5–45 Hz bandpass and f-k at 250 m/s.
-   - Detection test (`src/detection_tuning.py`): AUC picked a 1–10 Hz bandpass, f-k at 250 m/s and a cascade at 250 m/s. On validation, every f-k setting scored at or below the raw data.
-   - Every grid setting is also reported on the test days (`results/detection_sensitivity_test.csv`). The f-k velocity that was not chosen, 1000 m/s, would have scored 0.640 on test.
+6. **Baselines.** No setting is chosen on test days.
+   - Synthetic test: SI-SDR on validation days picked a 0.5–45 Hz bandpass and f-k at 250 m/s.
+   - Detection test: `src/detection_tuning.py --tune-on non-test` uses AUC on the 29 non-test days (bandpass and f-k have no trained parameters). It picked a 1–10 Hz bandpass, f-k at 1000 m/s and a cascade at 250 m/s. Each choice won in 29 of 29 leave-one-day-out folds.
+   - The cascade choice is optimistic, because seisDAE saw part of the train-day data.
+   - Tuning on the 7 validation days alone had picked f-k at 250 m/s, which was not stable.
+   - Every grid setting is also reported on the test days (`results/detection_sensitivity_test_nontest.csv`).
 7. **Tests.**
    - **Synthetic:** 19 test earthquakes mixed with recorded test-day noise at −10 to 10 dB. Scored with SI-SDR (insensitive to scale) against the recorded earthquake.
    - **Detection (main test):** 73 recorded test-day earthquakes and 210 noise windows, with no mixing.
@@ -67,7 +81,8 @@ The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_
 - **Test days were reused.** The test days were first used by an earlier version of this pipeline. The earthquake-labelling rule and the detection test were decided after that first result was seen. Only the addition of 168 noise windows was planned before its result.
 - **Small samples.** 6 validation, 19 synthetic-test and 73 detection-test earthquakes (50 of them below M1.5), over 7 test days.
 - **Baseline tuning matters.** With the synthetic SI-SDR criterion (references contain traffic) the bandpass stayed almost open (0.5–45 Hz), and seisDAE then looked better than the baselines. With detection-based tuning on validation days (1–10 Hz), the advantage disappeared. Both versions are reported.
-- **Unreliable tuning.** The validation days hold only 36 earthquake windows (6 strong). The validation choice of f-k velocity (250 m/s) was not the best on test (1000 m/s scored 0.640), so the chosen settings are not reliable. `python -m src.detection_tuning --tune-on non-test` re-tunes bandpass and f-k on all 30 non-test days, with a leave-one-day-out count of how often each setting wins.
+- **Tuning data.** The 7 validation days alone (36 earthquake windows) gave an unstable f-k choice. The reported detection settings were therefore re-tuned on all 29 non-test days. Those choices were stable (29 of 29 leave-one-day-out folds), but the switch was made after the validation-only result was seen.
+- **Noisy channels.** Single noisy channels are not masked. They survive seisDAE, and an f-k filter smears them into coherent artefacts.
 - **One training run.** seisDAE was trained once, from scratch, on 35 earthquakes. The spread between training runs (seeds) was not measured.
 - **Proxy metrics.** Detection AUC is a proxy. `python -m src.fk_energy` adds a reference-free measure: how much slow (traffic) energy a method removes compared with fast (earthquake) energy kept.
 - **Many comparisons.** Six methods, several tests and a magnitude split were compared. A single interval that barely excludes zero should be read as suggestive.
