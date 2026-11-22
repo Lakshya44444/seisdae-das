@@ -40,8 +40,16 @@ def fk(x, dx, vmin):
 
 # ------------------------------------------------------------------ seisDAE
 def read_config(path):
-    with open(path, "rb") as f:
-        return pickle.load(f)
+    """Load a seisDAE config (protocol-0 text pickle).
+
+    A Windows git checkout may convert its line endings to CRLF, which breaks
+    the text pickle; undo that conversion if the plain load fails.
+    """
+    raw = Path(path).read_bytes()
+    try:
+        return pickle.loads(raw)
+    except (ValueError, pickle.UnpicklingError):
+        return pickle.loads(raw.replace(b"\r\n", b"\n"))
 
 
 class SeisDAE:
