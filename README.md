@@ -7,8 +7,8 @@
 ## TL;DR
 
 - **Released seisDAE does not transfer to DAS.** Used as released, it distorts DAS waveforms more than any single filter, and its detection AUC (0.601) is below that of the tuned filters (difference not significant).
-- **Retraining on DAS helps compared with the released model.** In the synthetic test it was 3.6–6.0 dB better (one seed). In detection, the average AUC rose from 0.601 to 0.640 (from scratch) and 0.632 (fine-tuned); one fine-tuned seed (0.604) did not improve.
-- **Retrained seisDAE is only as good as a tuned bandpass filter.** For detection it is level with a 1–10 Hz bandpass and an f-k filter (AUC about 0.63–0.64), not better, and it did not improve waveform shape.
+- **Retraining on DAS helps compared with the released model.** In the synthetic test all six retrained runs were 3.2–7.4 dB better in SI-SDR gain at every input SNR. In detection, the average AUC rose from 0.601 to 0.640 (from scratch) and 0.632 (fine-tuned); one fine-tuned seed (0.604) did not improve.
+- **Retrained seisDAE is only as good as a tuned bandpass filter.** For detection it is level with a 1–10 Hz bandpass and an f-k filter (AUC about 0.63–0.64), not better. In waveform shape it never beat the bandpass.
 - **The spread between training seeds (about 0.04 AUC) is as large as the differences between methods.** Six retrained runs (3 from scratch, 3 fine-tuned) all lead to the same conclusion.
 
 Details follow.
@@ -28,10 +28,12 @@ Details follow.
 
 No method is a clear winner. The intervals overlap, and the paired differences below include zero. The M ≥ 1.5 column rests on 23 events.
 
-**Synthetic test:** waveform shape at 0 dB input SNR, as SI-SDR gain in dB (0 = unchanged). Raw 0, bandpass 0.5–45 Hz −0.82, f-k −4.14, released seisDAE −8.51, seisDAE trained on DAS −4.37 [−7.77, −1.21], cascade −10.29.
+**Synthetic test:** waveform shape at 0 dB input SNR, as SI-SDR gain in dB (0 = unchanged). Raw 0, bandpass 0.5–45 Hz −0.82, f-k −4.14, released seisDAE −8.51, seisDAE trained on DAS from scratch −4.37 [−7.77, −1.21] (seeds 2027, 2028: −3.60, −4.89), fine-tuned −2.95, −2.41, −2.38 (seeds 2026–2028), cascade −10.29. All seeds: `results/synthetic_seeds_*.csv`.
 
 1. **Released seisDAE does not transfer to DAS waveforms.** It had the lowest SI-SDR gain of the single-stage methods at every input SNR.
-2. **Training on DAS helps compared with the released model.** The DAS-trained model (from scratch, seed 2026) was 3.6–6.0 dB better in SI-SDR gain at every input SNR (paired, 14–17 of 19 test events). This synthetic-test number comes from one seed only.
+2. **Training on DAS helps compared with the released model.** All six retrained runs were better than the released model in SI-SDR gain at every input SNR: from scratch by 3.2–6.1 dB, fine-tuned by 5.4–7.4 dB. Every paired 95% interval excludes zero (13–19 of 19 test events per comparison).
+   - **Fine-tuning gave better waveform shape than training from scratch.** At every input SNR from −5 to 10 dB, all three fine-tuned runs scored above all three from-scratch runs (at 0 dB: −2.4 to −3.0 dB versus −3.6 to −4.9 dB). This was not tested with a paired interval, and the two used different training budgets.
+   - **Against the filters.** At −10 dB input SNR all six runs beat the f-k filter (paired intervals exclude zero); at −5 dB the three fine-tuned runs and one from-scratch run do; at 0 dB and above none does. No run beat the 0.5–45 Hz bandpass with an interval excluding zero, and at 5 and 10 dB all six were worse than it.
 3. **For detection, seisDAE trained on DAS is no better than a tuned bandpass or a tuned f-k filter.** All three gain about +0.07 AUC over the raw data. AUC differences [95% CI]:
    - tuned bandpass (1–10 Hz) minus raw data: +0.070 [0.022, 0.120];
    - tuned f-k (1000 m/s) minus raw data: +0.077 [0.012, 0.145];
@@ -71,7 +73,7 @@ No method is a clear winner. The intervals overlap, and the paired differences b
    - Fine-tuning did not improve on training from scratch here. Starting from the released weights did not avoid the seed spread either (one fine-tuned run, 0.604, is level with the released model).
    - The best single run (from scratch, seed 2027, 0.662) is not used as the headline number, because it was not chosen in advance.
 
-**Conclusion.** We compared the released, the from-scratch and the fine-tuned seisDAE, each retrained with three seeds. The released seisDAE should not be used on DAS data without retraining. Retrained on DAS, from scratch or by fine-tuning, it detects earthquakes about as well as a 1–10 Hz bandpass filter chosen on validation data, and not better; the run-to-run spread is as large as any difference between methods. Neither was shown to improve waveform fidelity.
+**Conclusion.** We compared the released, the from-scratch and the fine-tuned seisDAE, each retrained with three seeds. The released seisDAE should not be used on DAS data without retraining. Retrained on DAS, from scratch or by fine-tuning, it detects earthquakes about as well as a 1–10 Hz bandpass filter chosen on validation data, and not better; the run-to-run spread is as large as any difference between methods. Fine-tuning gave better waveform shape than training from scratch, but no retrained run beat the bandpass filter in waveform shape, and none improved on the unprocessed input at input SNR ≥ −5 dB.
 
 A possible reason, which we have **not tested**, is that seisDAE processes each channel on its own and does not use the coherence across neighbouring DAS channels.
 
@@ -114,7 +116,7 @@ The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_
 - **Baseline tuning matters.** Tuned by synthetic SI-SDR on validation days (references contain traffic), the bandpass stayed almost open (0.5–45 Hz), and seisDAE then looked better than the baselines in detection. Tuned by detection AUC on the 29 non-test days (1–10 Hz bandpass, f-k 1000 m/s), the baselines are level with seisDAE. The detection numbers above use the second, detection-based tuning. Both versions are in `results/`.
 - **The f-k choice was switched after test results were seen.** Detection tuning on the 7 validation days alone first chose f-k at 250 m/s. The sensitivity table on test had already shown 1000 m/s at 0.640 before the re-tuning, and the validation choice not being the best on test is what prompted the re-tuning. The re-tuning itself used no test data: it used the 29 non-test days, chose 1000 m/s, and that choice won all 29 leave-one-day-out folds. The bandpass choice (1–10 Hz) was the same in both tunings.
 - **Noisy channels.** Single noisy channels are not masked. They survive seisDAE, and an f-k filter smears them into coherent artefacts.
-- **Training runs.** Three seeds each for training from scratch and for fine-tuning, all on the same 35 training earthquakes. The f-k energy and picture analyses use only the first from-scratch run (seed 2026). Three seeds give a rough spread, not a precise one.
+- **Training runs.** Three seeds each for training from scratch and for fine-tuning, all on the same 35 training earthquakes. The field, f-k energy and picture analyses use only the first from-scratch run (seed 2026). Three seeds give a rough spread, not a precise one.
 - **Training length.** The from-scratch runs use a fixed 100 epochs. In the seed 2027 run the best validation loss came at epoch 93, so longer training might still help a little. Fine-tuning stopped early (seed 2026: epoch 21).
 - **Proxy metrics.** Detection AUC is a proxy. `python -m src.fk_energy` adds a reference-free measure: how much slow (traffic) energy a method removes compared with fast (earthquake) energy kept.
 - **Many comparisons.** Six methods, several tests and a magnitude split were compared. A single interval that barely excludes zero should be read as suggestive.
