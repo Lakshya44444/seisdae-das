@@ -80,6 +80,20 @@ class Dataset(unittest.TestCase):
         got = [build.split_of(d + pd.Timedelta(hours=5)) for d in days]
         self.assertEqual(got, ["train"] * 3 + ["validation", "test"] + ["train"] * 3 + ["validation", "test"])
 
+    def test_fast_snr_ignores_traffic(self):
+        rng = np.random.default_rng(8)
+        t = np.arange(6001) / 100
+        offsets = np.arange(96) * 7.95
+        wave = lambda delay, f: np.exp(-((t[None, :] - delay[:, None]) * 1.5) ** 2) * np.sin(
+            2 * np.pi * f * (t[None, :] - delay[:, None]))
+        noise = 0.05 * rng.normal(size=(96, 6001))
+        quake = wave(12 + offsets / 3000.0, 6) + noise
+        traffic = wave(12 + offsets / 80.0, 6) + noise
+        q = build.fast_snr(quake, 1000, 1300, 7.95)
+        c = build.fast_snr(traffic, 1000, 1300, 7.95)
+        self.assertGreater(np.median(q), 15)
+        self.assertLess(np.median(c), np.median(build.channel_snr_db(traffic, 1000, 1300)) - 10)
+
     def test_snr(self):
         rng = np.random.default_rng(1)
         x = rng.normal(size=(4, 6001))
@@ -95,6 +109,7 @@ class Dataset(unittest.TestCase):
             rng = np.random.default_rng(2)
             np.savez_compressed(g / "eq_1.npz", data=rng.normal(size=(8, 6001)).astype("float32"))
             np.save(g / "eq_1_snr.npy", np.array([20, 20, 5, 20, 20, 20, 20, 20.0]))
+            np.save(g / "eq_1_fastsnr.npy", np.array([20, 20, 5, 20, 20, 20, 20, 20.0]))
             np.savez_compressed(g / "noise_a.npz", data=rng.normal(size=(8, 6001)).astype("float32"))
             pd.DataFrame([dict(id="eq_1", kind="strong", split="train", start="2020-06-23T01:00Z", itp=1000, its=1500),
                           dict(id="noise_a", kind="noise", split="train", start="2020-06-23T02:00Z")]).to_csv(
