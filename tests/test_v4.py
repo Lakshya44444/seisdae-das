@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from src.v4 import build, catalog, das, methods
-from src.v4.evaluate import pairs
+from src.v4.evaluate import detection_stat, pairs
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -170,6 +170,14 @@ class Scores(unittest.TestCase):
             path = Path(tmp) / "crlf.config"
             path.write_bytes(raw.replace(b"\n", b"\r\n"))
             self.assertEqual(methods.read_config(path), methods.read_config(ROOT / "models/gr_mixed_stft.config"))
+
+    def test_detection_stat(self):
+        rng = np.random.default_rng(9)
+        x = rng.normal(size=(8, 6001))
+        x[:, 1000:2500] *= 10
+        self.assertAlmostEqual(detection_stat(x), detection_stat(0.1 * x), places=9)
+        self.assertGreater(detection_stat(x), 15)
+        self.assertLess(abs(detection_stat(rng.normal(size=(8, 6001)))), 1)
 
     def test_pairs_deterministic(self):
         ev = pd.DataFrame(dict(id=["a", "b", "c"]))
