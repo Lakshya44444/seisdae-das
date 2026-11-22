@@ -1,5 +1,10 @@
 {
   "seed": 2026,
+  "run": {
+    "tag": "v41",
+    "common_mode_removal": false,
+    "note": "V4.0 used tag \"\" with common_mode_removal true; see CHANGELOG"
+  },
   "archive": {
     "base_url": "https://scedc-pds.s3.us-west-2.amazonaws.com/Ridgecrest_DAS",
     "first_day": "2020-06-23",
