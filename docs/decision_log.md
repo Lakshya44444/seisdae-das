@@ -266,3 +266,23 @@ Suggested in review: add a fine-tuned variant and repeat the training with sever
 - **From scratch.** The existing run uses seed 2026. Two more runs use seeds 2027 and 2028, with the same command (100 epochs, batch 16).
 - **No setting is chosen on validation or test days for any variant.**
 - **Evaluation (`python -m src.variants`).** Every model is scored on the same 73 test earthquake windows and 210 test noise windows. The baselines (raw, bandpass 1–10 Hz, f-k 1000 m/s) are reused from `detection_tuning_rows.csv`. AUC with a paired window bootstrap, and per family the mean, minimum and maximum over seeds. Every run is reported.
+
+### Variants and seeds: results — 22 November 2026
+
+Run on the laptop as planned above; nothing was changed after seeing results. Detection test, 73 earthquake and 210 noise windows (`results/variants_auc.csv`, `variants_summary.csv`, `variants_rows.csv`).
+
+| Model | Seed | AUC [95% CI] | minus tuned bandpass [95% CI] | minus tuned f-k |
+|---|---|---|---|---|
+| Released | – | 0.601 [0.524, 0.675] | −0.033 [−0.079, 0.013] | −0.039 |
+| From scratch | 2026 | 0.638 [0.561, 0.714] | +0.005 [−0.068, 0.077] | −0.002 |
+| From scratch | 2027 | 0.662 [0.588, 0.735] | +0.028 [−0.042, 0.100] | +0.022 |
+| From scratch | 2028 | 0.620 [0.543, 0.695] | −0.014 [−0.083, 0.059] | −0.020 |
+| Fine-tuned | 2026 | 0.643 [0.563, 0.721] | +0.010 [−0.045, 0.067] | +0.003 |
+| Fine-tuned | 2027 | 0.604 [0.528, 0.679] | −0.029 [−0.086, 0.028] | −0.036 |
+| Fine-tuned | 2028 | 0.648 [0.574, 0.721] | +0.014 [−0.040, 0.072] | +0.008 |
+
+- Check: the from-scratch seed 2026 run is the earlier `das_seisdae` model and reproduces its earlier AUC (0.638).
+- Means: from scratch 0.640 (0.620–0.662), fine-tuned 0.632 (0.604–0.648).
+- Seed spread (~0.04) exceeds the gap between strategies and the gap to the tuned filters. No interval against the tuned bandpass excludes zero. The conclusion does not change.
+- Training notes: fine-tune seed 2026 stopped early at epoch 21 (best validation loss 0.431). From-scratch seed 2027 reached its best validation loss (0.420) at epoch 93 of 100. Validation losses are not compared across seeds, because each seed draws a different internal validation split.
+- The original retraining code writes `None` for the architecture fields in the fine-tuned `.config` files. The architecture comes from the loaded `.h5` file and is unchanged; inference uses only the STFT fields.
