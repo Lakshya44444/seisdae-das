@@ -37,7 +37,7 @@ def event_window(r):
 
 def good_channels(r):
     """Channels whose recorded reference reaches the scoring SNR (fixed rule, config)."""
-    snr = np.load(build.GATHERS / f"{r.id}_snr.npy")
+    snr = build.selection_snr(r.id)
     return snr >= E["score_channel_snr_db"]
 
 

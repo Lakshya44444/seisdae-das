@@ -80,6 +80,24 @@ def candidates(events, lat, lon):
     return pd.concat([strong.assign(candidate="strong"), weak.assign(candidate="weak")], ignore_index=True)
 
 
+def fast_snr(x, itp, its, dx):
+    """Channel SNR after an f-k fan filter keeps apparent velocities above fast_vmin_m_s.
+
+    Traffic crosses the block slowly (tens of m/s); a local earthquake crosses
+    it at km/s. Used only to decide which windows hold an earthquake; the
+    stored gathers and every method's input stay unfiltered.
+    """
+    from .methods import fk
+
+    return channel_snr_db(fk(x, dx, CFG["selection"]["fast_vmin_m_s"]), itp, its)
+
+
+def selection_snr(name):
+    """The per-channel SNR used for selection, export and scoring (config rule)."""
+    fast = CFG["selection"].get("snr_on_fast_component")
+    return np.load(GATHERS / f"{name}_{'fastsnr' if fast else 'snr'}.npy")
+
+
 def classify(split, snr, overlap):
     """Event class from per-channel SNR (rules in config.json "selection")."""
     s = CFG["selection"]
@@ -94,8 +112,18 @@ def classify(split, snr, overlap):
 
 
 def earthquake_snr(m):
+    """Per-channel selection SNR for every downloaded earthquake window."""
     eq = m[m.kind != "noise"].copy()
-    return eq, {r.id: np.load(GATHERS / f"{r.id}_snr.npy") for r in eq.itertuples()}
+    if not CFG["selection"].get("snr_on_fast_component"):
+        return eq, {r.id: np.load(GATHERS / f"{r.id}_snr.npy") for r in eq.itertuples()}
+    _, _, dx = geometry()
+    out = {}
+    for r in eq.itertuples():
+        path = GATHERS / f"{r.id}_fastsnr.npy"
+        if not path.exists():
+            np.save(path, fast_snr(load_gather(r.id), int(r.itp), int(r.its), dx))
+        out[r.id] = np.load(path)
+    return eq, out
 
 
 def stats():
@@ -216,7 +244,7 @@ def export():
             old.unlink()
     n_sig = n_noise = 0
     for r in m[(m.kind == "strong") & (m.split == "train")].itertuples():
-        x, snr = load_gather(r.id), np.load(GATHERS / f"{r.id}_snr.npy")
+        x, snr = load_gather(r.id), selection_snr(r.id)
         for ch in range(0, len(x), e["channel_stride"]):
             if snr[ch] < s["strong_snr_db"]:
                 continue
