@@ -257,3 +257,12 @@ The README conclusion changed accordingly. Once the bandpass is tuned for detect
   | Cascade | 0.116 | 0.002 | +16.0 dB |
 
 - **Example figure.** seisDAE suppresses noise windows, including traffic, but keeps noisy single channels. An f-k filter after seisDAE smears those channels into coherent artefacts. In earthquake windows the traffic largely remains after seisDAE.
+
+### Variants and seeds: plan fixed before running — 22 November 2026
+
+Suggested in review: add a fine-tuned variant and repeat the training with several seeds.
+
+- **Fine-tuned.** The released `gr_mixed_stft` model is trained further on the same DAS training traces (1894 signal traces, the same noise folder). It uses the original `retrain_from_parfile.py` with its own defaults (50 epochs, early stopping with patience 5 on its internal validation split of 0.2). Only the batch size is set to 16, to match the scratch run. Seeds 2026, 2027 and 2028.
+- **From scratch.** The existing run uses seed 2026. Two more runs use seeds 2027 and 2028, with the same command (100 epochs, batch 16).
+- **No setting is chosen on validation or test days for any variant.**
+- **Evaluation (`python -m src.variants`).** Every model is scored on the same 73 test earthquake windows and 210 test noise windows. The baselines (raw, bandpass 1–10 Hz, f-k 1000 m/s) are reused from `detection_tuning_rows.csv`. AUC with a paired window bootstrap, and per family the mean, minimum and maximum over seeds. Every run is reported.

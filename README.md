@@ -104,6 +104,7 @@ src/
   detection_stats.py ROC, AUC, bootstrap, AUC by magnitude
   detection_tuning.py re-tune baselines by detection AUC (validation or all non-test days)
   fk_energy.py       slow (traffic) energy removed vs fast (earthquake) energy kept
+  variants.py        released vs from-scratch vs fine-tuned seisDAE, several seeds
   examples.py        before/after pictures of recorded windows
   figures.py         figures and results/summary.md
   collect.py         copy the trained model into models/
@@ -147,6 +148,14 @@ python -m src.detection_tuning
 python -m src.detection_tuning --tune-on non-test
 python -m src.fk_energy
 python -m src.examples
+```
+
+Variants (fine-tuned released model, and more seeds):
+
+```
+python scripts/train_seisdae.py vendor/seisDAE --signals data/ridgecrest/upstream/signal --noise data/ridgecrest/upstream/noise --count 1894 --batch 16 --threads 8 --seed 2026 --retrain-from models/gr_mixed_stft.h5 --name das_finetune_s2026
+python -m src.collect vendor/seisDAE --name das_finetune_s2026 --as variants/finetune_s2026
+python -m src.variants
 ```
 
 To run the offline tests: `python -m unittest discover -s tests`.
