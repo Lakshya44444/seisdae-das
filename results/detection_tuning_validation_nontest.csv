@@ -1,0 +1,16 @@
+method,family,tuning_auc,chosen,chosen_in,of_folds
+Bandpass 0.5-45 Hz,Bandpass,0.5447927551375827,False,0.0,
+Bandpass 1-10 Hz,Bandpass,0.6586555207244862,True,29.0,29.0
+Bandpass 1-20 Hz,Bandpass,0.5706025774991292,False,0.0,
+Bandpass 2-30 Hz,Bandpass,0.5439916405433647,False,0.0,
+Noisy,Noisy,0.5438871473354232,True,29.0,29.0
+f-k 1000 m/s,f-k,0.5551027516544758,True,29.0,29.0
+f-k 2000 m/s,f-k,0.5402298850574713,False,0.0,
+f-k 250 m/s,f-k,0.5297109021246952,False,0.0,
+f-k 500 m/s,f-k,0.5337861372344131,False,0.0,
+seisDAE (DAS) + f-k 1000 m/s,seisDAE (DAS) + f-k,0.6239637756879136,False,0.0,
+seisDAE (DAS) + f-k 2000 m/s,seisDAE (DAS) + f-k,0.611947056774643,False,0.0,
+seisDAE (DAS) + f-k 250 m/s,seisDAE (DAS) + f-k,0.6545802856147683,True,29.0,29.0
+seisDAE (DAS) + f-k 500 m/s,seisDAE (DAS) + f-k,0.6351445489376524,False,0.0,
+seisDAE (DAS-trained),seisDAE (DAS-trained),0.7699059561128526,True,29.0,29.0
+seisDAE (released),seisDAE (released),0.6838383838383838,True,29.0,29.0
