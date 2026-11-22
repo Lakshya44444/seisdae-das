@@ -1,9 +1,9 @@
 {
   "seed": 2026,
   "run": {
-    "tag": "v41",
-    "common_mode_removal": false,
-    "note": "V4.0 used tag \"\" with common_mode_removal true; see CHANGELOG"
+    "tag": "",
+    "common_mode_removal": true,
+    "note": "tag v41 (common mode off) was tried and rejected; see CHANGELOG"
   },
   "archive": {
     "base_url": "https://scedc-pds.s3.us-west-2.amazonaws.com/Ridgecrest_DAS",
@@ -44,6 +44,8 @@
     "strong_snr_db": 10.0,
     "strong_min_channel_fraction": 0.3,
     "allow_overlap": true,
+    "snr_on_fast_component": true,
+    "fast_vmin_m_s": 1000,
     "weak_snr_db": [3.0, 12.0],
     "noise_windows_per_day": 6,
     "noise_attempts_per_day": 60
