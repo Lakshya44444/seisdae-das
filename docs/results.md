@@ -30,7 +30,7 @@ No method is a clear winner. The intervals overlap, and the paired differences b
    - seisDAE + f-k minus tuned bandpass: +0.038 [−0.040, 0.118];
    - seisDAE + f-k minus tuned f-k: +0.032 [−0.032, 0.096];
    - for the M ≥ 1.5 events only, seisDAE trained on DAS minus tuned bandpass: +0.038 [−0.084, 0.169].
-4. **Small events are at chance.** 50 of the 73 test earthquakes are below M1.5. For them the raw data score AUC 0.50, and no method separates them reliably.
+4. **Small events are near chance for seisDAE.** 50 of the 73 test earthquakes are below M1.5. For them the raw data score AUC 0.501, the bandpass 0.551 [0.468, 0.637] and from-scratch seisDAE 0.541 [0.454, 0.630]; only the methods with an f-k step stay above chance (f-k 0.616 [0.531, 0.699], cascade 0.631 [0.545, 0.714]) (`results/detection_retuned_by_magnitude_nontest.csv`).
 5. **Not shown.** No method improved waveform shape at input SNR ≥ −5 dB against the recorded references.
 6. **Traffic versus earthquake energy (reference-free, `results/fk_energy_summary.csv`).** In the 73 test earthquake windows:
    - DAS-trained seisDAE kept a median 11% of fast (> 1000 m/s) and 17% of slow (< 250 m/s) f-k energy. Its selectivity was −1.7 dB [−2.7, −0.8]: it lowers both and does not preferentially remove traffic.
