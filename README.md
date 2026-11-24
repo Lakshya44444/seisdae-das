@@ -4,6 +4,16 @@
 
 **What we did.** We retrained the original seisDAE network on 60 s windows of the public Ridgecrest DAS dataset (California, 2020), both from scratch and by fine-tuning the released model, with three seeds each. We then compared it with standard filters on test days that were not used for training or for tuning the final settings. The test days were, however, reused across versions of this pipeline (see Limitations).
 
+## Description
+
+DAS turns an optical fiber into thousands of closely spaced strain sensors. Roadside fiber records earthquakes, but also strong traffic noise, noise common to all channels and badly coupled channels. seisDAE is a U-Net denoising autoencoder that works on the time–frequency (STFT) image of one trace and predicts which parts are signal; it was built and trained for seismometer data. This project asks whether it also works on DAS, and tests the answer honestly.
+
+- **Data.** 37 days (23 June – 29 July 2020) of the public Ridgecrest DAS archive (SCEDC, AWS Open Data), 96 neighbouring channels (about 760 m of fiber), 60 s earthquake windows from the SCEDC catalogue and random noise windows. Windows are split by day into train, validation and test days. Only the needed bytes are read from the hourly SEG-Y files with HTTP range requests. File format, channel mapping, labelling and window counts: [`docs/data.md`](docs/data.md).
+- **Models.** The released seisDAE model; seisDAE retrained from scratch on DAS; and the released model fine-tuned on DAS. Both retrained versions use the original seisDAE code unchanged, with three random seeds each.
+- **Baselines.** A bandpass filter and an f-k (apparent-velocity) filter, with settings chosen without test days.
+- **Tests.** Waveform shape: SI-SDR on test earthquakes mixed with recorded test noise at −10 to 10 dB. Detection: ROC AUC on 73 recorded test earthquake windows against 210 test noise windows. Traffic removal: how much slow (traffic) and fast (earthquake) f-k energy each method keeps. All comparisons are paired, with 95% bootstrap intervals.
+- **Everything is recorded.** Every result table is in `results/`; every decision, including those made after a result was seen, is dated in [`docs/decision_log.md`](docs/decision_log.md); the full write-up is in [`docs/results.md`](docs/results.md).
+
 ## TL;DR
 
 - **Released seisDAE does not transfer to DAS.** Used as released, it distorts DAS waveforms more than any single filter (SI-SDR), and its detection AUC (0.601) is below that of the tuned filters (difference not significant).
@@ -100,6 +110,7 @@ scripts/train_seisdae.py   runs the original seisDAE trainer
 models/                    released seisDAE model (+ trained DAS model)
 tests/                     offline tests
 results/                   final results
+docs/data.md               Ridgecrest data format, channel mapping, windows and splits
 docs/results.md            detailed results (all tables and intervals)
 docs/decision_log.md       dated record of every decision and result
 archive/earlier_attempt/   first attempt on 2 s Caltech DAS snippets (not used)
