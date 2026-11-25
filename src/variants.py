@@ -91,14 +91,50 @@ def main(rescore=True):
         mean_minus_bandpass=("minus Bandpass 1-10 Hz", "mean"), mean_minus_fk=("minus f-k 1000 m/s", "mean"),
         mean_minus_released=("minus released", "mean"))
     summary.to_csv(OUT / "variants_summary.csv")
-    print(f"{len(eq)} earthquake windows, {len(nz)} noise windows")
-    cols = ["model", "auc", "lo", "hi", "minus Noisy", "minus Bandpass 1-10 Hz", "minus Bandpass 1-10 Hz lo",
-            "minus Bandpass 1-10 Hz hi", "minus f-k 1000 m/s", "minus released", "minus released lo",
-            "minus released hi"]
-    print(table[[c for c in cols if c in table]].round(3).to_string(index=False))
-    print()
-    print(summary.round(3).to_string())
+    print_table(table, summary, len(eq), len(nz))
 
+
+NAMES = {"Noisy": "Raw data", "Bandpass 1-10 Hz": "Bandpass 1-10 Hz", "f-k 1000 m/s": "f-k 1000 m/s",
+         "released": "seisDAE released"}
+
+
+def label(model):
+    if model in NAMES:
+        return NAMES[model]
+    kind, seed = model.rsplit("_s", 1)
+    return f"{'From scratch' if kind == 'scratch' else 'Fine-tuned'}, seed {seed}"
+
+
+def diff(r, base):
+    if f"minus {base}" not in r or pd.isna(r[f"minus {base}"]):
+        return "-"
+    d, lo, hi = r[f"minus {base}"], r[f"minus {base} lo"], r[f"minus {base} hi"]
+    sig = "yes" if lo > 0 or hi < 0 else "no"
+    return f"{d:+.3f} [{lo:+.3f}, {hi:+.3f}] {sig}"
+
+
+def print_table(table, summary, n_eq, n_noise):
+    """Readable summary: one line per model; the full numbers stay in the CSV files."""
+    print(f"\nDetection test: {n_eq} earthquake windows, {n_noise} noise windows (test days)")
+    print("AUC: 0.5 = chance, 1 = perfect. Brackets = 95% interval. 'sig' = interval excludes zero.\n")
+    head = f"{'Model':26}{'AUC [95% interval]':24}{'vs bandpass':30}{'vs released':30}"
+    print(head)
+    print(f"{'':50}{'diff [interval] sig':30}{'diff [interval] sig':30}")
+    print("-" * len(head))
+    order = {"Noisy": 0, "Bandpass 1-10 Hz": 1, "f-k 1000 m/s": 2, "released": 3}
+    rank = lambda m: order.get(m, 4 if m.startswith("scratch") else 5)
+    for _, r in table.sort_values("model", key=lambda c: c.map(lambda m: (rank(m), m))).iterrows():
+        auc = f"{r.auc:.3f} [{r.lo:.3f}, {r.hi:.3f}]"
+        print(f"{label(r.model):26}{auc:24}{diff(r, 'Bandpass 1-10 Hz'):30}{diff(r, 'released'):30}")
+    print("\nPer training type:")
+    for fam in ("released", "scratch", "finetune"):
+        if fam not in summary.index:
+            continue
+        r = summary.loc[fam]
+        name = {"scratch": "From scratch", "finetune": "Fine-tuned", "released": "Released"}[fam]
+        spread = f"range {r.min_auc:.3f} to {r.max_auc:.3f}" if r.runs > 1 else "single run"
+        print(f"  {name:14} {int(r.runs)} run(s)   mean AUC {r.mean_auc:.3f}   {spread}")
+    print("\nFull numbers: results/variants_auc.csv, results/variants_summary.csv")
 
 if __name__ == "__main__":
     import sys
