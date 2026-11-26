@@ -6,9 +6,11 @@ test: input = recorded earthquake + recorded noise, target = the recorded
 earthquake. It sees many channels together, so it can use moveout across the
 fiber, and it learns what our noise (traffic, common-mode residue) looks like.
 
-  python -m src.unet2d train                 train (seed 2026)
-  python -m src.unet2d train --seed 2027     another seed
-  python -m src.unet2d evaluate              detection + synthetic tests (same as the other models)
+  python -m src.unet2d train                 first version v1 (seed 2026)
+  python -m src.unet2d train --preset v2     test-like mixing + 25 % noise-only samples
+  python -m src.unet2d train --preset v3     v2, but the network predicts the noise (output = input - noise)
+  python -m src.unet2d validate              compare versions on VALIDATION days, pick one by a fixed rule
+  python -m src.unet2d evaluate              detection + synthetic tests on test days (same as the other models)
 
 Data (no test day is used for training or for any choice)
   signal  clean earthquakes ("strong") of the train split, the same 35 events seisDAE used
@@ -44,7 +46,7 @@ LEVELS = 3
 P_INDEX = CFG["window"]["p_index"]
 
 
-def build(f0=16, kernel=(3, 7), lr=1e-3, seed=None):
+def build(f0=16, kernel=(3, 7), lr=1e-3, seed=None, residual=False):
     import tf_keras as keras
     from tf_keras import layers
 
@@ -69,6 +71,8 @@ def build(f0=16, kernel=(3, 7), lr=1e-3, seed=None):
         x = layers.Concatenate()([x, skip])
         x = conv(conv(x, f), f)
     out = layers.Conv2D(1, 1)(x)
+    if residual:
+        out = layers.Subtract()([inp, out])
     model = keras.Model(inp, out)
     model.compile(optimizer=keras.optimizers.Adam(learning_rate=lr), loss="mse")
     return model
@@ -78,7 +82,8 @@ class UNet2D:
     """Same interface as the other denoisers: (channels, 6001) in and out."""
 
     def __init__(self, h5):
-        self.model = build()
+        settings = read_settings(h5)
+        self.model = build(residual=settings.get("residual", False))
         self.model.load_weights(str(h5))
 
     def __call__(self, x):
@@ -92,6 +97,20 @@ class UNet2D:
         return y[:nc, :nt].astype(np.float64) * scale
 
 
+PRESETS = {
+    "v1": dict(matched=False, noise_only=0.0, residual=False, steps=50),
+    "v2": dict(matched=True, noise_only=0.25, residual=False, steps=100),
+    "v3": dict(matched=True, noise_only=0.25, residual=True, steps=100),
+}
+
+
+def read_settings(h5):
+    import json
+
+    path = h5.with_suffix(".json")
+    return json.loads(path.read_text()) if path.exists() else PRESETS["v1"]
+
+
 # ------------------------------------------------------------------ training data
 def load_split(split):
     m = manifest()
@@ -103,8 +122,16 @@ def load_split(split):
     return sig, noise
 
 
-def sample(sig, noise, n, rng):
-    """n training pairs (input, target), each (CROP_CH, CROP_T, 1)."""
+def sample(sig, noise, n, rng, matched=False, noise_only=0.0):
+    """n training pairs (input, target), each (CROP_CH, CROP_T, 1).
+
+    matched=False (v1): SNR set on the crop itself.
+    matched=True (v2, v3): SNR set on the whole 60 s gathers, then the same
+      channels and times are cropped from both, exactly as mix() builds the
+      synthetic test; the noise gather is aligned channel by channel.
+    noise_only: share of samples that are pure noise with target zero, so the
+      model also learns to output nothing when there is no earthquake.
+    """
     x = np.zeros((n, CROP_CH, CROP_T, 1), dtype="float32")
     y = np.zeros_like(x)
     for b in range(n):
@@ -116,12 +143,20 @@ def sample(sig, noise, n, rng):
         else:
             t = rng.integers(0, s.shape[1] - CROP_T + 1)
         cs = s[c:c + CROP_CH, t:t + CROP_T]
-        c2 = rng.integers(0, nz.shape[0] - CROP_CH + 1)
-        t2 = rng.integers(0, nz.shape[1] - CROP_T + 1)
-        cn = nz[c2:c2 + CROP_CH, t2:t2 + CROP_T]
         level = rng.uniform(-10, 10)
-        k = np.sqrt(np.sum(cs ** 2) / (np.sum(cn ** 2) * 10 ** (level / 10) + 1e-30))
-        mix = cs + k * cn
+        if matched:
+            cn = nz[c:c + CROP_CH, t:t + CROP_T]
+            k = np.sqrt(np.sum(s ** 2) / (np.sum(nz ** 2) * 10 ** (level / 10) + 1e-30))
+        else:
+            c2 = rng.integers(0, nz.shape[0] - CROP_CH + 1)
+            t2 = rng.integers(0, nz.shape[1] - CROP_T + 1)
+            cn = nz[c2:c2 + CROP_CH, t2:t2 + CROP_T]
+            k = np.sqrt(np.sum(cs ** 2) / (np.sum(cn ** 2) * 10 ** (level / 10) + 1e-30))
+        if rng.random() < noise_only:
+            cs = np.zeros_like(cs)
+            mix = cn
+        else:
+            mix = cs + k * cn
         if rng.integers(2):
             mix, cs = mix[::-1], cs[::-1]
         sign = rng.integers(2) * 2 - 1
@@ -131,8 +166,13 @@ def sample(sig, noise, n, rng):
     return x, y
 
 
-def train(seed, epochs, steps, batch, patience, lr):
+def train(seed, preset, epochs, batch, patience, lr):
+    import json
+
     import tf_keras as keras
+
+    cfg = PRESETS[preset]
+    steps = cfg["steps"]
 
     class Batches(keras.utils.Sequence):
         def __init__(self, sig, noise, rng):
@@ -143,15 +183,17 @@ def train(seed, epochs, steps, batch, patience, lr):
             return steps
 
         def __getitem__(self, i):
-            return sample(self.sig, self.noise, batch, self.rng)
+            return sample(self.sig, self.noise, batch, self.rng, cfg["matched"], cfg["noise_only"])
 
     RUNS.mkdir(parents=True, exist_ok=True)
-    name = f"s{seed}"
-    model = build(lr=lr, seed=seed)
+    name = f"s{seed}" if preset == "v1" else f"{preset}_s{seed}"
+    (RUNS / f"{name}.json").write_text(json.dumps(dict(cfg, preset=preset, seed=seed, lr=lr, batch=batch)))
+    model = build(lr=lr, seed=seed, residual=cfg["residual"])
+    print(f"preset {preset}: {cfg}")
     print(f"U-Net with {model.count_params():,} parameters")
     tr_sig, tr_noise = load_split("train")
     va_sig, va_noise = load_split("validation")
-    val_x, val_y = sample(va_sig, va_noise, 256, np.random.default_rng(seed + 1))
+    val_x, val_y = sample(va_sig, va_noise, 256, np.random.default_rng(seed + 1), cfg["matched"], cfg["noise_only"])
     data = Batches(tr_sig, tr_noise, np.random.default_rng(seed))
     best = model.evaluate(val_x, val_y, batch_size=batch, verbose=0)
     print(f"validation loss before training {best:.4f}")
@@ -185,19 +227,72 @@ def outputs(models, x):
     return {name: net(x) for name, net in models.items()}
 
 
+def validate():
+    """Choose among U-Net versions on VALIDATION days only (rule fixed beforehand):
+    the highest mean SI-SDR gain over the five input levels wins; detection AUC is shown too.
+    Bandpass 1-10 Hz and f-k 1000 m/s are scored on the same windows for reference."""
+    from .das import geometry
+    from .detection_stats import auc
+    from .evaluate import E, detection_stat, event_window, good_channels, original, pairs
+    from .methods import bandpass, fk, mix, scores
+
+    dx = geometry()[2]
+    methods = {"Bandpass 1-10 Hz": lambda x: bandpass(x, (1, 10)), "f-k 1000 m/s": lambda x: fk(x, dx, 1000)}
+    methods.update(nets())
+    m = original(manifest())
+    ev = m[(m.kind == "strong") & (m.split == "validation")]
+    nz = m[(m.kind == "noise") & (m.split == "validation")]
+    syn = []
+    for k, (r, nid, draw) in enumerate(pairs(ev, nz, E["validation_noise_draws"], CFG["seed"] + 30)):
+        s, n, win, ok = load_gather(r.id), load_gather(nid), event_window(r), good_channels(r)
+        for level in E["levels_db"]:
+            x = mix(s, n, level)
+            for name, f in methods.items():
+                syn.append(dict(method=name, level=level, gain=scores(s[ok], x[ok], f(x)[ok], win)["si_gain_db"]))
+        print(f"validation synthetic {k + 1}", end="\r")
+    print()
+    full = manifest()
+    overlap = full["overlap"].fillna(0) if "overlap" in full else 0
+    det_ev = full[(full.kind != "noise") & (full.split == "validation") & (overlap == 0)]
+    det_nz = full[(full.kind == "noise") & (full.split == "validation")]
+    det = []
+    for label, group in (("earthquake", det_ev), ("noise", det_nz)):
+        for r in group.itertuples():
+            x = load_gather(r.id)
+            for name, f in methods.items():
+                det.append(dict(method=name, label=label, stat=detection_stat(f(x))))
+    syn, det = pd.DataFrame(syn), pd.DataFrame(det)
+    table = syn.pivot_table(index="method", columns="level", values="gain")
+    table["mean"] = table.mean(axis=1)
+    table["detection AUC"] = [auc(det[(det.method == mth) & (det.label == "earthquake")].stat,
+                                  det[(det.method == mth) & (det.label == "noise")].stat) for mth in table.index]
+    table = table.sort_values("mean", ascending=False)
+    table.to_csv(ROOT / "results/unet2d_validation.csv")
+    print(f"\nValidation days only: {len(ev)} earthquakes for the synthetic test, "
+          f"{len(det_ev)} earthquake + {len(det_nz)} noise windows for detection")
+    print("SI-SDR gain (dB) per input SNR, mean, and detection AUC:\n")
+    print(table.round(2).to_string())
+    best = [i for i in table.index if i.startswith("unet2d")][0]
+    print(f"\nChosen by the fixed rule (highest mean SI-SDR gain among U-Nets): {best}")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=["train", "evaluate"])
+    p.add_argument("command", choices=["train", "validate", "evaluate"])
+    p.add_argument("--preset", choices=list(PRESETS), default="v1",
+                   help="v1 first version; v2 test-like mixing + noise-only samples; v3 = v2 predicting the noise")
     p.add_argument("--seed", type=int, default=CFG["seed"])
     p.add_argument("--epochs", type=int, default=60)
-    p.add_argument("--steps", type=int, default=50, help="mini-batches per epoch")
     p.add_argument("--batch", type=int, default=8)
     p.add_argument("--patience", type=int, default=8)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--only", choices=["detection", "synthetic"])
     a = p.parse_args()
     if a.command == "train":
-        train(a.seed, a.epochs, a.steps, a.batch, a.patience, a.lr)
+        train(a.seed, a.preset, a.epochs, a.batch, a.patience, a.lr)
+        return
+    if a.command == "validate":
+        validate()
         return
     from .jdas import evaluate_detection, evaluate_synthetic
 

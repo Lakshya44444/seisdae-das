@@ -25,6 +25,15 @@ class UNet2DData(unittest.TestCase):
         self.assertGreaterEqual(snr.min(), -10.01)
         self.assertLessEqual(snr.max(), 10.01)
 
+    def test_matched_mixing_and_noise_only(self):
+        rng = np.random.default_rng(3)
+        sig = [rng.normal(size=(96, 6001)).astype("float32")]
+        noise = [rng.normal(size=(96, 6001)).astype("float32")]
+        x, y = unet2d.sample(sig, noise, 400, rng, matched=True, noise_only=0.25)
+        empty = np.all(y == 0, axis=(1, 2, 3))
+        self.assertTrue(0.15 < empty.mean() < 0.35)
+        self.assertTrue(np.all(np.abs(x[empty]).sum(axis=(1, 2, 3)) > 0))
+
     def test_whole_window_padding(self):
         class StandIn(unet2d.UNet2D):
             def __init__(self):
