@@ -99,7 +99,8 @@ NAMES = {"Noisy": "Raw data", "Bandpass 1-10 Hz": "Bandpass 1-10 Hz", "f-k 1000 
 
 
 KINDS = {"scratch": "From scratch", "finetune": "Fine-tuned", "jdas_pretrained": "jDAS released",
-         "jdas_finetune": "jDAS fine-tuned", "jdas_scratch": "jDAS from scratch"}
+         "jdas_finetune": "jDAS fine-tuned", "jdas_scratch": "jDAS from scratch",
+         "unet2d": "2-D U-Net (ours)"}
 
 
 def label(model):

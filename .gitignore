@@ -13,3 +13,4 @@ results/example_*.npz
 models/variants/
 data/public/
 models/jdas/
+models/unet2d/

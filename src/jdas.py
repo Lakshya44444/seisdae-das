@@ -342,26 +342,26 @@ def train(seed, scratch, epochs, steps, batch, patience, lr):
 
 
 # ------------------------------------------------------------------ evaluation
-def evaluate_detection(nets):
+def evaluate_detection(nets, out_fn=None, tag="jdas"):
     from . import variants
     from .evaluate import OUT, detection_stat
 
     windows = pd.read_csv(OUT / "detection_tuning_rows.csv")[["window", "label"]].drop_duplicates()
     rows = []
     for k, r in enumerate(windows.itertuples()):
-        for name, y in outputs(nets, load_gather(r.window)).items():
+        for name, y in (out_fn or outputs)(nets, load_gather(r.window)).items():
             rows.append(dict(window=r.window, label=r.label, method=name, stat_db=detection_stat(y)))
         print(f"detection {k + 1}/{len(windows)}", end="\r")
     print()
     new = pd.DataFrame(rows)
-    new.to_csv(OUT / "jdas_detection_rows.csv", index=False)
+    new.to_csv(OUT / f"{tag}_detection_rows.csv", index=False)
     old = pd.read_csv(OUT / "variants_rows.csv")
     old = old[~old.method.isin(new.method.unique())]
     pd.concat([old, new], ignore_index=True).to_csv(OUT / "variants_rows.csv", index=False)
     variants.main(rescore=False)
 
 
-def evaluate_synthetic(nets):
+def evaluate_synthetic(nets, out_fn=None, names_fn=None, tag="jdas"):
     from .evaluate import E, OUT, bootstrap, event_window, good_channels, original, pairs
     from .methods import mix, scores
 
@@ -374,13 +374,14 @@ def evaluate_synthetic(nets):
         s, n, win, ok = load_gather(r.id), load_gather(nid), event_window(r), good_channels(r)
         for level in E["levels_db"]:
             x = mix(s, n, level)
-            for name, y in outputs(nets, x).items():
+            for name, y in (out_fn or outputs)(nets, x).items():
                 rows.append(dict(event=r.id, draw=draw, level=level, model=name,
                                  si_gain_db=scores(s[ok], x[ok], y[ok], win)["si_gain_db"]))
         print(f"synthetic {k + 1}/{len(jobs)}", end="\r")
     print()
     d = pd.DataFrame(rows).groupby(["event", "level", "model"], as_index=False).si_gain_db.mean()
-    d.to_csv(OUT / "synthetic_jdas_events.csv", index=False)
+    d.to_csv(OUT / f"synthetic_{tag}_events.csv", index=False)
+    names = names_fn or globals()["names"]
 
     wide = d.pivot_table(index=["event", "level"], columns="model", values="si_gain_db")
     seeds = pd.read_csv(OUT / "synthetic_seeds_events.csv").pivot_table(
@@ -405,8 +406,8 @@ def evaluate_synthetic(nets):
                 paired.append(dict(model=name, minus=b, level=level, si_gain_db=mean, lo=lo, hi=hi,
                                    events=len(g), wins=int((g > 0).sum())))
     summary, paired = pd.DataFrame(summary), pd.DataFrame(paired)
-    summary.to_csv(OUT / "synthetic_jdas_summary.csv", index=False)
-    paired.to_csv(OUT / "synthetic_jdas_paired.csv", index=False)
+    summary.to_csv(OUT / f"synthetic_{tag}_summary.csv", index=False)
+    paired.to_csv(OUT / f"synthetic_{tag}_paired.csv", index=False)
 
     print(f"\nSynthetic test: {len(ev)} test earthquakes x {E['noise_draws']} noise draws")
     print("SI-SDR gain (dB) per input SNR. Brackets = 95% interval.\n")
@@ -420,13 +421,13 @@ def evaluate_synthetic(nets):
                                      CFG["seed"])
             cells.append(f"{mean:+.2f} [{lo:+.1f},{hi:+.1f}]")
         print(f"{name:26}" + "".join(f"{c:>20}" for c in cells))
-    print("\njDAS minus bandpass / minus f-k (dB, 'yes' = 95% interval excludes zero):")
+    print("\nMinus bandpass / minus f-k (dB, 'yes' = 95% interval excludes zero):")
     for name in names(nets):
         for b in ("Bandpass", "f-k"):
             p = paired[(paired.model == name) & (paired.minus == b)]
             cells = [f"{r.si_gain_db:+.2f} {'yes' if r.lo > 0 or r.hi < 0 else 'no'}" for r in p.itertuples()]
             print(f"  {name:22} - {b:9}" + "".join(f"{c:>12}" for c in cells))
-    print("\nFull numbers: results/synthetic_jdas_summary.csv, results/synthetic_jdas_paired.csv")
+    print(f"\nFull numbers: results/synthetic_{tag}_summary.csv, results/synthetic_{tag}_paired.csv")
 
 
 def main():

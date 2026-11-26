@@ -102,6 +102,8 @@ src/
   fk_energy.py       slow (traffic) energy removed vs fast (earthquake) energy kept
   variants.py        released vs from-scratch vs fine-tuned seisDAE, several seeds (detection)
   jdas.py            jDAS (multi-channel, self-supervised): released weights, fine-tuning, same tests
+  unet2d.py          our supervised 2-D U-Net (channels x time), trained on train-day mixtures
+  jdas_diagnose.py   why jDAS fails here: clean-signal test, coherence, common-mode removal
   public_check.py    released seisDAE on public land and ocean-bottom seismometer data
   quick_check.py     1-2 minute check that the repository works on a new computer
   synthetic_seeds.py the same variants on the synthetic SI-SDR test
@@ -220,6 +222,12 @@ python -m src.jdas check
 python -m src.jdas train
 python -m src.jdas train --scratch
 python -m src.jdas evaluate
+```
+
+Our 2-D U-Net (same tests):
+```
+python -m src.unet2d train
+python -m src.unet2d evaluate
 ```
 
 ### If something fails
