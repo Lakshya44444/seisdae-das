@@ -101,13 +101,16 @@ src/
   detection_tuning.py re-tune baselines by detection AUC (validation or all non-test days)
   fk_energy.py       slow (traffic) energy removed vs fast (earthquake) energy kept
   variants.py        released vs from-scratch vs fine-tuned seisDAE, several seeds (detection)
+  jdas.py            jDAS (multi-channel, self-supervised): released weights, fine-tuning, same tests
+  public_check.py    released seisDAE on public land and ocean-bottom seismometer data
+  quick_check.py     1-2 minute check that the repository works on a new computer
   synthetic_seeds.py the same variants on the synthetic SI-SDR test
   examples.py        before/after pictures of recorded windows
   figures.py         figures and results/summary.md
   collect.py         copy the trained model into models/
   peek.py            quick-look plot of one window
 scripts/train_seisdae.py   runs the original seisDAE trainer
-models/                    released seisDAE model (+ trained DAS model)
+models/                    released seisDAE model, trained DAS model, released jDAS model
 tests/                     offline tests
 results/                   final results
 docs/data.md               Ridgecrest data format, channel mapping, windows and splits
@@ -118,19 +121,73 @@ archive/earlier_attempt/   first attempt on 2 s Caltech DAS snippets (not used)
 
 ## How to run
 
-Tested on a Windows laptop, CPU only, with Python 3.13.2, TensorFlow 2.20 and tf-keras 2.20 (`pip install -r requirements.txt`). The pinned seisDAE code targets older TensorFlow and works here through tf-keras. Clone seisDAE into `vendor/seisDAE` and check out commit `26c9ba0`.
+There are three levels. Levels 1 and 2 take minutes and need no Ridgecrest download; level 3 repeats the whole study.
 
-Rough cost on that laptop:
+| Level | What it shows | Time (CPU laptop) | Download |
+|---|---|---|---|
+| 1. Quick check | code, tests and all three neural models work; saved results load | 1–2 min | none |
+| 2. Public seismometer check | released seisDAE on land (IU.ANMO) and ocean-bottom (7D) broadband data | minutes (land download took about 5 min in our run) | small, from IRIS/EarthScope |
+| 3. Full run | every DAS result in this README | many hours | about 3 GB from AWS |
+
+### Setup (once)
+
+Tested on Windows 11, CPU only, Python 3.13.2, TensorFlow 2.20, tf-keras 2.20. A GitHub ZIP or a clone does **not** contain the data (`data/`) or the seisDAE trainer (`vendor/`); both are fetched by the commands below.
+
+Windows (Command Prompt, inside the unzipped folder):
+```
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+Linux / macOS:
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+Run every command from the repository folder (the one that contains `src/`), with the environment active.
+
+### Level 1: quick check
+
+```
+python -m src.quick_check
+```
+Prints PASS or FAIL for: package versions, the offline tests (`tests/`), loading and running the released seisDAE, the DAS-trained seisDAE and the released jDAS (jDAS is also compared with its original file: difference 0), and the main saved results. The last line should read `... of ... checks passed`. On a fresh computer step 5 says the Ridgecrest windows are not downloaded; that is expected.
+
+The tables of this README can be printed again from the saved CSV files, without data:
+```
+python -m src.variants --stats-only
+```
+
+### Level 2: public seismometer check
+
+```
+python -m src.public_check download land
+python -m src.public_check download obs
+python -m src.public_check evaluate
+```
+Needs internet (IRIS and USGS web services). Events are drawn with a fixed seed, but the archives can change, so counts may differ slightly from `results/public_check_*.csv`.
+
+### Level 3: full run
+
+Clone the seisDAE trainer (only needed to train seisDAE):
+```
+git clone https://github.com/JanisHe/seisDAE vendor/seisDAE
+git -C vendor/seisDAE checkout 26c9ba0
+```
+
+Rough cost on the laptop:
 
 | Step | Time | Disk |
 |---|---|---|
 | Download | several hours (byte-range requests to AWS) | about 3 GB in `data/ridgecrest/` |
-| Training (100 epochs) | 30–80 min (17–47 s per epoch) | |
+| seisDAE training (100 epochs) | 30–80 min (17–47 s per epoch) | |
 | Evaluation | about 30 min | |
 | `detection_tuning` | 20–40 min | |
 
 `--count` in the training command is the number of signal traces printed by `python -m src.build --export` (1894 in our run).
 
+Data and seisDAE:
 ```
 python -m src.das --inspect
 python -m src.catalog
@@ -149,8 +206,7 @@ python -m src.fk_energy
 python -m src.examples
 ```
 
-Variants (fine-tuned released model, and more seeds):
-
+seisDAE variants (fine-tuned released model, more seeds):
 ```
 python scripts/train_seisdae.py vendor/seisDAE --signals data/ridgecrest/upstream/signal --noise data/ridgecrest/upstream/noise --count 1894 --batch 16 --threads 8 --seed 2026 --retrain-from models/gr_mixed_stft.h5 --name das_finetune_s2026
 python -m src.collect vendor/seisDAE --name das_finetune_s2026 --as variants/finetune_s2026
@@ -158,11 +214,28 @@ python -m src.variants
 python -m src.synthetic_seeds
 ```
 
-To run the offline tests: `python -m unittest discover -s tests`.
+jDAS (needs the steps above, because it adds rows to the same tables):
+```
+python -m src.jdas check
+python -m src.jdas train
+python -m src.jdas train --scratch
+python -m src.jdas evaluate
+```
+
+### If something fails
+
+| Message | Fix |
+|---|---|
+| `No module named ...` | environment not active, or `pip install -r requirements.txt` not run |
+| `No such file ... data/ridgecrest/...` | the command needs level 3 data: run `python -m src.build --download` first |
+| `No such file ... vendor/seisDAE` | clone seisDAE as shown under level 3 |
+| `FDSNNoDataException` during `public_check download` | normal for a few stations without data; those records are skipped |
+| TensorFlow deprecation warnings | harmless |
 
 ## References
 
 - Steinberg, A., et al. (2023). *Neural Network Based Denoising of Regional Seismic Waveforms and Impact on Analysis of North Korean Nuclear Tests.* Code: https://github.com/JanisHe/seisDAE
 - Atterholt, J., et al. (2022). A unified wavefield-partitioning approach for distributed acoustic sensing. *Geophys. J. Int.*, 228, 1410–1418. https://doi.org/10.1093/gji/ggab407
 - Lapins, S., et al. (2024). DAS-N2N: machine learning DAS signal denoising without clean data. *Geophys. J. Int.*, 236, 1026–1041. https://doi.org/10.1093/gji/ggad460
+- van den Ende, M., Lior, I., Ampuero, J.-P., Sladen, A., Ferrari, A., & Richard, C. (2023). A self-supervised deep learning approach for blind denoising and waveform coherence enhancement in distributed acoustic sensing data. *IEEE Trans. Neural Netw. Learn. Syst.*, 34(7), 3371–3384. https://doi.org/10.1109/TNNLS.2021.3132832 Code: https://github.com/martijnende/jDAS
 - Li, Z., Shen, Z., Yang, Y., Williams, E., Wang, X., & Zhan, Z. (2021). Rapid response to the 2019 Ridgecrest earthquake with distributed acoustic sensing. *AGU Advances*, 2, e2021AV000395. https://doi.org/10.1029/2021AV000395

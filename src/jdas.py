@@ -1,4 +1,4 @@
-"""jDAS (van den Ende et al., 2021, IEEE TNNLS) on the Ridgecrest DAS windows.
+"""jDAS (van den Ende et al., 2023, IEEE TNNLS 34, 3371-3384) on the Ridgecrest DAS windows.
 
 jDAS is a self-supervised, multi-channel DAS denoiser. It hides one channel
 of an 11-channel block and predicts it from its neighbours: a signal that is
