@@ -1,45 +1,57 @@
-# Denoising DAS data with seisDAE
+# Denoising DAS data with seisDAE, jDAS and a 2-D U-Net
 
 **Objective.** Use seisDAE (Steinberg et al., 2023; code https://github.com/JanisHe/seisDAE) to denoise distributed acoustic sensing (DAS) data.
 
-**What we did.** We retrained the original seisDAE network on 60 s windows of the public Ridgecrest DAS dataset (California, 2020), both from scratch and by fine-tuning the released model, with three seeds each. We then compared it with standard filters on test days that were not used for training or for tuning the final settings. The test days were, however, reused across versions of this pipeline (see Limitations).
+**What we did.** We retrained the original seisDAE network on 60 s windows of the public Ridgecrest DAS dataset (California, 2020), both from scratch and by fine-tuning the released model, with three seeds each. After a first review we added (i) a check of the released seisDAE on public land and ocean-bottom seismometer data, (ii) jDAS, a published self-supervised multi-channel DAS denoiser, and (iii) our own supervised 2-D U-Net that sees all channels at once. Everything was compared with standard filters on test days that were not used for training or for choosing settings. The test days were, however, reused across versions of this pipeline (see Limitations).
 
 ## Description
 
 DAS turns an optical fiber into thousands of closely spaced strain sensors. Roadside fiber records earthquakes, but also strong traffic noise, noise common to all channels and badly coupled channels. seisDAE is a U-Net denoising autoencoder that works on the time–frequency (STFT) image of one trace and predicts which parts are signal; it was built and trained for seismometer data. This project asks whether it also works on DAS, and tests the answer honestly.
 
 - **Data.** 37 days (23 June – 29 July 2020) of the public Ridgecrest DAS archive (SCEDC, AWS Open Data), 96 neighbouring channels (about 760 m of fiber), 60 s earthquake windows from the SCEDC catalogue and random noise windows. Windows are split by day into train, validation and test days. Only the needed bytes are read from the hourly SEG-Y files with HTTP range requests. File format, channel mapping, labelling and window counts: [`docs/data.md`](docs/data.md).
-- **Models.** The released seisDAE model; seisDAE retrained from scratch on DAS; and the released model fine-tuned on DAS. Both retrained versions use the original seisDAE code unchanged, with three random seeds each.
+- **Models.** The released seisDAE model; seisDAE retrained from scratch on DAS; the released model fine-tuned on DAS (both with the original seisDAE code unchanged, three seeds each); jDAS (released, fine-tuned, from scratch); and our supervised 2-D U-Net (three seeds).
 - **Baselines.** A bandpass filter and an f-k (apparent-velocity) filter, with settings chosen without test days.
 - **Tests.** Waveform shape: SI-SDR on test earthquakes mixed with recorded test noise at −10 to 10 dB. Detection: ROC AUC on 73 recorded test earthquake windows against 210 test noise windows. Traffic removal: how much slow (traffic) and fast (earthquake) f-k energy each method keeps. All comparisons are paired, with 95% bootstrap intervals.
 - **Everything is recorded.** Every result table is in `results/`; every decision, including those made after a result was seen, is dated in [`docs/decision_log.md`](docs/decision_log.md); the full write-up is in [`docs/results.md`](docs/results.md).
 
 ## TL;DR
 
-- **Released seisDAE does not transfer to DAS.** Used as released, it distorts DAS waveforms more than any single filter (SI-SDR), and its detection AUC (0.601) is below that of the tuned filters (difference not significant).
-- **Retraining on DAS clearly helps waveform shape, less clearly detection.** In SI-SDR, all six retrained runs (3 from scratch, 3 fine-tuned) beat the released model by 3.2–7.4 dB at every input SNR, all significant. In detection, the average AUC rose from 0.601 to 0.632–0.640, but no single run is significantly better than the released model.
-- **At very low SNR, retrained seisDAE beats the f-k filter.** At −10 dB input SNR all six retrained runs had higher SI-SDR gain than f-k (paired intervals exclude zero), and their gain over the unprocessed input was positive (+0.3 to +1.0 dB, not significant).
-- **Otherwise it is only as good as a tuned bandpass filter.** For detection it is level with a 1–10 Hz bandpass and an f-k filter (AUC about 0.63–0.64), not better. In SI-SDR it never beat the bandpass, and above 0 dB it was worse.
-- **The spread between training seeds (about 0.04 AUC) is as large as the differences between methods.** Every retrained run leads to the same conclusion.
+- **The released seisDAE works on seismometers, not on DAS.** On public broadband data it raised the SNR of real records by +14.9 dB [13.2, 16.5] on land (IU.ANMO, 100 records) and +12.2 dB [10.4, 14.0] on the ocean bottom (Cascadia 7D, 164 records); a 1–10 Hz bandpass gave +3.6 and +2.0 dB. On DAS the same model distorts waveforms more than any filter (SI-SDR gain −8.5 dB at 0 dB input SNR). So the failure on DAS is a change of data type (strain on a roadside fiber), not a broken model or code.
+- **Retraining seisDAE on DAS helps waveform shape, not detection.** All six retrained runs beat the released model in SI-SDR at every input SNR; in detection none is significantly better than the released model or than a tuned bandpass.
+- **jDAS fails on this array.** Released, fine-tuned or trained from scratch, it lowered SI-SDR at every input SNR (by 6 to 15 dB after fine-tuning, 26 to 36 dB as released) and its detection AUC (0.53–0.56) is below the bandpass. Measured reason: neighbouring channels correlate only about 0.70 during earthquakes, and the main noise (traffic) is itself coherent, so the assumption behind jDAS does not hold here.
+- **Our 2-D U-Net is the best neural model on waveform shape, but not on detection.** Averaged over three seeds it beats the f-k filter at every input SNR (+2.6 to +3.4 dB, 19 of 19 events), the released seisDAE (+5 to +11 dB) and jDAS; above 0 dB it also beats retrained seisDAE. At −10 to 0 dB it is level with the bandpass (differences −0.3 to +0.05 dB, not significant); above that the bandpass is better. Its detection AUC (0.58) is below the bandpass (0.63).
+- **No method beat a simple bandpass with a significant margin** on this 760 m urban fiber section, in either test.
 
 ## Key numbers
 
-Test days. Detection: 73 earthquake and 210 noise windows; settings of the filters chosen on the 29 non-test days. SI-SDR: 19 test earthquakes mixed with recorded noise; gain in dB (0 = unchanged input). Ranges are over the three seeds.
+Test days. Detection: ROC AUC, 73 earthquake and 210 noise windows. Synthetic: SI-SDR gain in dB (0 = unchanged input), 19 test earthquakes mixed with recorded test noise; for several seeds the gain is averaged per event over the seeds. Baselines were tuned without test days: for detection a 1–10 Hz bandpass and f-k at 1000 m/s, for the synthetic test a 0.5–45 Hz bandpass and f-k at 250 m/s. Brackets: 95% bootstrap intervals. Built by `python -m src.final_table` from `results/`.
 
-| Method | Detection ROC AUC | SI-SDR gain at 0 dB | SI-SDR gain at −10 dB |
-|---|---|---|---|
-| Raw data | 0.563 | 0 | 0 |
-| Bandpass (detection: 1–10 Hz; SI-SDR: 0.5–45 Hz) | 0.633 | −0.82 | −0.28 |
-| f-k filter (detection: 1000 m/s; SI-SDR: 250 m/s) | 0.640 | −4.14 | −2.84 |
-| seisDAE, released | 0.601 | −8.51 | −5.28 |
-| seisDAE, from scratch (3 seeds) | 0.620–0.662 (mean 0.640) | −4.89 to −3.60 | +0.33 to +0.83 |
-| seisDAE, fine-tuned (3 seeds) | 0.604–0.648 (mean 0.632) | −2.95 to −2.38 | +0.55 to +1.03 |
+| Method | Detection AUC | SI-SDR gain at −10 dB | at 0 dB | at +10 dB |
+|---|---|---|---|---|
+| Raw data | 0.563 | 0 | 0 | 0 |
+| Bandpass | 0.633 | −0.28 [−0.5, −0.1] | −0.82 [−1.3, −0.4] | −2.37 [−3.5, −1.4] |
+| f-k filter | 0.640 | −2.84 [−4.2, −1.6] | −4.14 [−6.0, −2.5] | −7.76 [−10.3, −5.4] |
+| seisDAE, released | 0.601 | −5.28 [−9.0, −1.4] | −8.51 [−11.9, −5.0] | −14.87 [−18.1, −11.5] |
+| seisDAE, from scratch (3 seeds) | 0.620–0.662 | +0.63 [−1.7, +3.0] | −4.29 [−7.8, −1.1] | −10.90 [−15.1, −6.9] |
+| seisDAE, fine-tuned (3 seeds) | 0.604–0.648 | +0.79 [−1.4, +3.1] | −2.58 [−5.1, −0.1] | −8.04 [−10.9, −5.4] |
+| jDAS, released | 0.533 | −25.54 [−30.8, −20.1] | −28.72 [−34.1, −22.9] | −35.62 [−41.2, −29.7] |
+| jDAS, fine-tuned | 0.557 | −5.94 [−8.0, −4.0] | −8.74 [−11.5, −6.2] | −14.88 [−18.1, −11.9] |
+| jDAS, from scratch | 0.544 | −5.75 [−7.6, −4.0] | −8.92 [−11.5, −6.6] | −15.16 [−18.1, −12.4] |
+| **2-D U-Net v1, ours (3 seeds)** | 0.579–0.585 | −0.23 [−1.0, +0.5] | −1.16 [−2.3, −0.1] | −4.32 [−6.1, −2.7] |
 
-Confidence intervals, paired comparisons, magnitude bins, the traffic-energy measure and the pictures: [`docs/results.md`](docs/results.md).
+U-Net v1 minus the others, paired per event (dB; * = 95% interval excludes zero):
 
-**Conclusion.** We compared the released, the from-scratch and the fine-tuned seisDAE, each retrained with three seeds. The released seisDAE should not be used on DAS data without retraining. Retrained on DAS, from scratch or by fine-tuning, it detects earthquakes about as well as a 1–10 Hz bandpass filter chosen on the non-test days, and not better; the run-to-run spread is as large as any difference between methods. In SI-SDR, fine-tuning did better than training from scratch, and every retrained run beat f-k at −10 dB, but no retrained run beat the bandpass, and none improved significantly on the unprocessed input.
+| minus | −10 dB | −5 dB | 0 dB | +5 dB | +10 dB |
+|---|---|---|---|---|---|
+| Bandpass | +0.05 | −0.07 | −0.33 | −0.88* | −1.95* |
+| f-k | +2.61* | +2.76* | +2.98* | +3.24* | +3.43* |
+| seisDAE released | +5.05* | +5.71* | +7.35* | +9.14* | +10.54* |
+| seisDAE fine-tuned | −1.02 | +0.10 | +1.42 | +2.68* | +3.72* |
+| jDAS fine-tuned | +5.71* | +6.39* | +7.58* | +9.08* | +10.56* |
 
-A possible reason, which we have **not tested**, is that seisDAE processes each channel on its own and does not use the coherence across neighbouring DAS channels.
+Public seismometer check, the "+ bandpass" variants of jDAS, U-Net versions v2 and v3, all intervals and the earlier seisDAE details: [`docs/results.md`](docs/results.md).
+
+**Conclusion.** The released seisDAE is sound on the seismometer data it was built for, but should not be used on DAS data without retraining. Of the three neural approaches we tried on DAS, single-channel (seisDAE), self-supervised multi-channel (jDAS) and supervised multi-channel (our 2-D U-Net), the 2-D U-Net preserves waveforms best and is the only one that matches a tuned bandpass at low SNR, but none beats the bandpass significantly, and in detection none beats it at all. jDAS fails for a measured physical reason (limited channel-to-channel coherence of earthquakes and coherent traffic noise on this short array). On this data set a tuned bandpass remains the method to beat.
 
 ## Method
 
@@ -61,7 +73,11 @@ A possible reason, which we have **not tested**, is that seisDAE processes each 
    - The cascade choice is optimistic, because seisDAE saw part of the train-day data.
    - Tuning on the 7 validation days alone had picked f-k at 250 m/s, which was not stable.
    - Every grid setting is also reported on the test days (`results/detection_sensitivity_test_nontest.csv`).
-7. **Tests.**
+7. **Models added after review.**
+   - **Public seismometer check** (`src/public_check.py`): released seisDAE on IU.ANMO (land, 2016–2020) and Cascadia Initiative 7D ocean-bottom BHZ (2013–2014), M ≥ 4 events at 1–8°, from IRIS/USGS via ObsPy. Real-record SNR gain (0–20 s after the predicted P over 1–9 s before), and a synthetic test with high-SNR records mixed with noise windows of other records.
+   - **jDAS** (van den Ende et al., 2023; `src/jdas.py`): the released network, rebuilt layer by layer (output identical to the released file), applied at 50 Hz on 11-channel blocks. Fine-tuned and trained from scratch, self-supervised, on train-day windows only (40 epochs, early stopping on validation days). Also scored with a 1–10 Hz bandpass after it, as in the jDAS example.
+   - **2-D U-Net, ours** (`src/unet2d.py`): 3 levels, pooling 2 (channels) × 4 (time), 16–128 filters, 1.1 M parameters. Supervised: random 48-channel × 10.24 s crops of train-day earthquakes plus train-day noise at −10 to +10 dB, target the recorded earthquake, MSE loss, early stopping on validation days. Versions v2 (test-like mixing, 25% noise-only samples) and v3 (v2 predicting the noise) were compared with v1 on validation days only, by a rule fixed beforehand (highest mean SI-SDR gain); v1 was chosen. All versions are reported on test.
+8. **Tests.**
    - **Synthetic:** 19 test earthquakes mixed with recorded test-day noise at −10 to 10 dB. Scored with SI-SDR (insensitive to scale) against the recorded earthquake.
    - **Detection (main test):** 73 recorded test-day earthquakes and 210 noise windows, with no mixing.
      - **Score:** each method's output gets one number per window. That number is the median over the 96 channels of the power ratio, in dB, between the window from 0.5 s before to 20 s after sample 1000 (10 s) and the 1–9 s window.
@@ -73,6 +89,10 @@ A possible reason, which we have **not tested**, is that seisDAE processes each 
 
 ## Limitations
 
+- **Noisy references cap the synthetic test.** The reference earthquakes are recordings and contain their own noise. A method that removes that noise is scored as distorting the signal, which is a likely reason why every method's gain falls as the input SNR rises.
+- **Validation set for the U-Net choice is small** (6 earthquakes); the three versions differed by about 1 dB there. U-Net training at learning rate 1e-3 was occasionally unstable (v3 and seed 2027 had one diverging epoch; the saved model is the best one before it).
+- **jDAS was run at 50 Hz** (the released model's rate), which removes content above 25 Hz, and with overlapping, cross-faded blocks instead of the original non-overlapping ones. Only one seed each for jDAS fine-tuning and training from scratch.
+- **Public check:** one land station; only 11 high-SNR ocean-bottom references; the real-record SNR gain also rewards removing pre-event noise; the comparison bandpass (1–10 Hz) was not tuned.
 - **Test days were reused.** The test days were first used by an earlier version of this pipeline. The earthquake-labelling rule and the detection test were decided after that first result was seen. Only the addition of 168 noise windows was planned before its result.
 - **Small samples.** 6 validation, 19 synthetic-test and 73 detection-test earthquakes (50 of them below M1.5), over 7 test days.
 - **Baseline tuning matters.** Tuned by synthetic SI-SDR on validation days (references contain traffic), the bandpass stayed almost open (0.5–45 Hz), and seisDAE then looked better than the baselines in detection. Tuned by detection AUC on the 29 non-test days (1–10 Hz bandpass, f-k 1000 m/s), the baselines are level with seisDAE. The detection numbers above use the second, detection-based tuning. Both versions are in `results/`.
@@ -105,6 +125,7 @@ src/
   unet2d.py          our supervised 2-D U-Net (channels x time), trained on train-day mixtures
   jdas_diagnose.py   why jDAS fails here: clean-signal test, coherence, common-mode removal
   public_check.py    released seisDAE on public land and ocean-bottom seismometer data
+  final_table.py     final comparison of every method, read from results/*.csv
   quick_check.py     1-2 minute check that the repository works on a new computer
   synthetic_seeds.py the same variants on the synthetic SI-SDR test
   examples.py        before/after pictures of recorded windows
@@ -159,6 +180,7 @@ Prints PASS or FAIL for: package versions, the offline tests (`tests/`), loading
 The tables of this README can be printed again from the saved CSV files, without data:
 ```
 python -m src.variants --stats-only
+python -m src.final_table
 ```
 
 ### Level 2: public seismometer check

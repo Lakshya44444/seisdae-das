@@ -316,3 +316,15 @@ README: the one-seed caveat on the SI-SDR claim is replaced by these all-seed nu
 - README shortened to objective, TL;DR, one key-numbers table, conclusion, method, limitations and how to run. All detailed results moved unchanged to `docs/results.md`, with the metric named in each fine-tuning statement (SI-SDR versus detection AUC).
 - Conclusion wording: the bandpass was chosen on the 29 non-test days, not on validation days.
 - TL;DR adds the low-SNR result: at −10 dB every retrained run beats f-k in SI-SDR.
+
+### After the presentation: public check, jDAS, 2-D U-Net — 26–27 November 2026
+
+Review asked for a better model, other papers, and a check of the model on a public dataset. Four days, laptop CPU only (PARAM Ganga unavailable).
+
+- **Public seismometer check, plan fixed before running:** released seisDAE unchanged; IU.ANMO (land) and 7D (ocean-bottom) BHZ; M ≥ 4 at 1–8°; real-record SNR gain and a synthetic test with references of base SNR ≥ 15 dB; bandpass 1–10 Hz for comparison, not tuned. Result: item 9 of `docs/results.md`.
+- **jDAS, plan fixed before running:** released weights; 50 Hz; overlapping blocks with cross-fade; fine-tuning and from-scratch training on train-day windows, early stopping on validation days, 40 epochs, learning rate 1e-4 (that of the released optimiser); scored with and without a 1–10 Hz bandpass after it (the jDAS example's post-filter). Result: item 10.
+- **jDAS diagnosis, after the result was seen:** hypothesis that our common-mode removal deletes the earthquake. Rejected (1.5% of energy removed; coherence 0.70 vs 0.69). Same conclusion as V4.1.
+- **2-D U-Net v1, plan fixed before running:** architecture and training settings in `src/unet2d.py`, train and validation days only. Evaluated on test once.
+- **v2 and v3, after v1's test result was seen:** v1 was weak in detection and above 0 dB, so v2 (test-like mixing, 25% noise-only samples) and v3 (predicting the noise) were written. To avoid choosing by test results, the version was chosen on validation days by a rule fixed before running (highest mean SI-SDR gain). v1 won. All three versions are reported on test; the headline uses v1 with three seeds.
+- **Labelling correction:** in the first console printouts of the jDAS and U-Net comparisons the synthetic-test "Bandpass" column was described as 1–10 Hz; it is the 0.5–45 Hz bandpass chosen earlier on validation days (and f-k is 250 m/s). The tables in README and `docs/results.md` state this.
+- `src/final_table.py` builds the final comparison from the saved CSV files; `src/quick_check.py` checks the repository on a new computer in 1–2 minutes.

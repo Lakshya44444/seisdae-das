@@ -1,6 +1,6 @@
 # Detailed results
 
-All numbers on the test days. The short version, method and limitations are in the [README](../README.md); every decision and its date are in [`decision_log.md`](decision_log.md).
+All DAS numbers are on the test days. Items 9–11 were added after the first review (26 November 2026). The short version, method and limitations are in the [README](../README.md); every decision and its date are in [`decision_log.md`](decision_log.md).
 
 
 **Detection test:** separating recorded earthquake windows (73) from noise windows (210) on test days. Settings were chosen by detection AUC on the 29 non-test days (165 earthquake windows, 174 noise windows). Each choice won in all 29 leave-one-day-out folds.
@@ -60,5 +60,42 @@ No method is a clear winner. The intervals overlap, and the paired differences b
    - This is not an equal-budget comparison. From-scratch runs train for a fixed 100 epochs; fine-tuning uses the original retraining defaults with early stopping (seed 2026 stopped at epoch 21).
    - In detection AUC, fine-tuning did not improve on training from scratch. Starting from the released weights did not avoid the seed spread either (one fine-tuned run, 0.604, is level with the released model).
    - The best single run (from scratch, seed 2027, 0.662) is not used as the headline number, because it was not chosen in advance.
+
+9. **Released seisDAE on public seismometer data (`src/public_check.py`, `results/public_check_*.csv`, `results/figures/public_check_examples.png`).** Released model, unchanged. Land: IU.ANMO.00.BHZ, 2016–2020, 100 records. Ocean bottom: Cascadia Initiative 7D BHZ, Aug 2013 – Jun 2014, 164 records from 2 stations per event. Events M ≥ 4 at 1–8° (USGS), windows aligned on the iasp91 P time, 100 Hz.
+
+   | | Land (IU.ANMO) | Ocean bottom (7D) |
+   |---|---|---|
+   | Real-record SNR gain, seisDAE | +14.88 dB [13.20, 16.51], 95/100 improved | +12.22 dB [10.37, 14.03], 155/164 improved |
+   | Real-record SNR gain, bandpass 1–10 Hz | +3.58 dB [2.88, 4.28], 87/100 | +2.00 dB [1.43, 2.59], 120/164 |
+   | Synthetic SI-SDR gain at 0 dB, seisDAE / bandpass | −0.31 / −0.02 (42 references) | +5.15 / +4.53 (11 references) |
+   | seisDAE minus bandpass, synthetic, significant at | +5 dB (+3.02) and +10 dB (+4.77); worse but not significant at −10 dB (−2.38 [−4.53, +0.04]) | +10 dB only (+3.89 [1.57, 6.13]) |
+
+   - The real-record SNR gain also rewards removing pre-event noise, so the synthetic test is shown beside it.
+   - Conclusion: on the data type it was built for, the released seisDAE clearly works (large real-record gain; synthetic gain at least level with the bandpass, better at high SNR). Its failure on DAS is therefore a change of data type, not a fault of the model or of our code.
+
+10. **jDAS (`src/jdas.py`, `results/synthetic_jdas_*.csv`, `results/jdas_*`).** Released network rebuilt layer by layer; `python -m src.jdas check` gives a relative difference of 0 to the released file. Fine-tuned and trained from scratch on train-day windows (self-supervised, 40 epochs, seed 2026); validation loss fell from 0.157 to 0.140 (fine-tuned) and from 0.177 to 0.140 (from scratch).
+
+    | jDAS version | Detection AUC | SI-SDR gain at 0 dB |
+    |---|---|---|
+    | Released | 0.533 [0.449, 0.614] | −28.72 [−34.1, −22.9] |
+    | Released + bandpass 1–10 Hz | 0.571 [0.491, 0.652] | −30.39 |
+    | Fine-tuned | 0.557 [0.478, 0.637] | −8.74 [−11.5, −6.2] |
+    | Fine-tuned + bandpass 1–10 Hz | 0.604 [0.524, 0.683] | −14.18 |
+    | From scratch | 0.544 [0.463, 0.626] | −8.92 [−11.5, −6.6] |
+    | From scratch + bandpass 1–10 Hz | 0.618 [0.539, 0.695] | −14.02 |
+
+    - Every jDAS version is below the synthetic-test bandpass and f-k at every input SNR (all paired intervals exclude zero). Without the bandpass, every version is also significantly below the detection bandpass.
+    - The 1–10 Hz bandpass after jDAS lowers SI-SDR because the references carry energy outside 1–10 Hz: on clean references (no noise added) a 1–10 Hz bandpass alone scores −3.6 dB.
+    - **Diagnosis (`src/jdas_diagnose.py`).**
+      - The 96-channel common-mode removal in our preprocessing is not the cause. On 6 test events downloaded again, it removed 1.5% of the earthquake-window energy, and neighbour coherence was 0.70 without it and 0.69 with it. jDAS kept the clean signal equally in both cases (SI-SDR +6.1 and +5.9 dB, no noise added). This repeats the earlier check of 22 November (V4.1).
+      - On the 19 clean test references (no noise added), on the scored channels only, the output kept the signal with SI-SDR: DAS-trained seisDAE +7.3 dB, jDAS fine-tuned +0.1 dB, bandpass 1–10 Hz −3.6 dB, f-k 1000 m/s −4.2 dB. The coherence printed in that check (0.38) was computed between scored channels, which are not always neighbours; the 0.70 above, over all 96 channels, is the meaningful value.
+      - Reading: jDAS keeps only what neighbouring channels can predict. With earthquake coherence of about 0.7 between neighbours and traffic noise that is itself coherent, it removes part of the earthquake and keeps much of the noise.
+
+11. **Our 2-D U-Net (`src/unet2d.py`, `results/synthetic_unet2d_*.csv`, `results/unet2d_*`, `results/final_*.csv`).**
+    - **Choice of version on validation days only** (`results/unet2d_validation.csv`; rule fixed before: highest mean SI-SDR gain): v1 −2.32 dB, v3 −3.29 dB, v2 −3.34 dB. v1 was chosen and then trained with two more seeds. (In this validation table the filters are the detection settings, 1–10 Hz and 1000 m/s, which is why they score far lower there than in the test table.)
+    - **Test days, v1, mean over 3 seeds per event:** SI-SDR gain −0.23, −0.57, −1.16, −2.30, −4.32 dB at −10, −5, 0, 5, 10 dB. Paired against the others: see the README table. In short, better than f-k at every level (19/19 events) and than released seisDAE and jDAS; better than retrained seisDAE at +5 and +10 dB; level with the 0.5–45 Hz bandpass at −10 to 0 dB, below it at +5 and +10 dB.
+    - **Single seeds** at 0 dB: −1.25, −1.03, −1.19 dB (seeds 2026–2028). Detection AUC 0.581, 0.585, 0.579; each run is significantly below the 1–10 Hz bandpass (by 0.049–0.054).
+    - **v2 and v3 on test:** SI-SDR at 0 dB −2.17 and −2.09 dB; AUC 0.575 and 0.586. Both below v1, as on validation.
+    - Training: about 15–22 s per epoch on a laptop CPU; early stopping after 20–37 epochs. Two runs had one diverging epoch (v3 epoch 8, seed 2027 epoch 32); the saved weights are from the best epoch before it.
 
 The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_retuned_*.csv`, `detection_sensitivity_test.csv`, `variants_*.csv`, `synthetic_seeds_*.csv`). The figures are in `results/roc.png` and `results/figures/`.
