@@ -161,6 +161,19 @@ def sample(sig, noise, n, rng, matched=False, noise_only=0.0, targets=None):
         else:
             t = rng.integers(0, s.shape[1] - CROP_T + 1)
         cs = s[c:c + CROP_CH, t:t + CROP_T]
+        if targets is not None:
+            # v4 only: a crop with (almost) no recorded signal gives a mixture scale near zero,
+            # while the f-k-filtered target can still hold leaked energy there, so the scaled
+            # target explodes; the same happens if the filter leaked much more energy into the
+            # crop than the recording holds. Draw another crop (bug found in the first v4 run).
+            tries = 0
+            bad = lambda c, t, cs: (np.sum(cs ** 2) < 1e-6 * np.mean(s ** 2) * cs.size or
+                                    np.sum(tgt[c:c + CROP_CH, t:t + CROP_T] ** 2) > 4 * np.sum(cs ** 2))
+            while bad(c, t, cs) and tries < 50:
+                c = rng.integers(0, s.shape[0] - CROP_CH + 1)
+                t = rng.integers(0, s.shape[1] - CROP_T + 1)
+                cs = s[c:c + CROP_CH, t:t + CROP_T]
+                tries += 1
         level = rng.uniform(-10, 10)
         if matched:
             cn = nz[c:c + CROP_CH, t:t + CROP_T]
