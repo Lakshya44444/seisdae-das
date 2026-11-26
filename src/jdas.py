@@ -240,22 +240,27 @@ class JDAS:
 
 
 def models():
-    """Name -> (weights, postfilter) for every jDAS model that exists."""
-    found = {}
+    """Name -> weights for every jDAS model that exists."""
     files = {"jdas_pretrained": PRETRAINED}
     files.update({f"jdas_{h5.stem}": h5 for h5 in sorted(RUNS.glob("*.h5"))})
-    for name, h5 in files.items():
-        if h5.exists():
-            found[name] = (h5, False)
-            found[name + "_bp"] = (h5, True)
-    return found
+    return {name: h5 for name, h5 in files.items() if h5.exists()}
 
 
 def denoisers():
-    nets = {}
-    for name, (h5, post) in models().items():
-        nets[name] = JDAS(h5, postfilter=post)
-    return nets
+    return {name: JDAS(h5) for name, h5 in models().items()}
+
+
+def outputs(nets, x):
+    """Every model once, plus the same output after bandpass 1-10 Hz ("_bp")."""
+    out = {}
+    for name, net in nets.items():
+        y = net(x)
+        out[name], out[name + "_bp"] = y, bandpass(y, POSTFILTER)
+    return out
+
+
+def names(nets):
+    return [n + tag for n in nets for tag in ("", "_bp")]
 
 
 # ------------------------------------------------------------------ training
@@ -344,9 +349,8 @@ def evaluate_detection(nets):
     windows = pd.read_csv(OUT / "detection_tuning_rows.csv")[["window", "label"]].drop_duplicates()
     rows = []
     for k, r in enumerate(windows.itertuples()):
-        g = load_gather(r.window)
-        for name, net in nets.items():
-            rows.append(dict(window=r.window, label=r.label, method=name, stat_db=detection_stat(net(g))))
+        for name, y in outputs(nets, load_gather(r.window)).items():
+            rows.append(dict(window=r.window, label=r.label, method=name, stat_db=detection_stat(y)))
         print(f"detection {k + 1}/{len(windows)}", end="\r")
     print()
     new = pd.DataFrame(rows)
@@ -370,9 +374,9 @@ def evaluate_synthetic(nets):
         s, n, win, ok = load_gather(r.id), load_gather(nid), event_window(r), good_channels(r)
         for level in E["levels_db"]:
             x = mix(s, n, level)
-            for name, net in nets.items():
+            for name, y in outputs(nets, x).items():
                 rows.append(dict(event=r.id, draw=draw, level=level, model=name,
-                                 si_gain_db=scores(s[ok], x[ok], net(x)[ok], win)["si_gain_db"]))
+                                 si_gain_db=scores(s[ok], x[ok], y[ok], win)["si_gain_db"]))
         print(f"synthetic {k + 1}/{len(jobs)}", end="\r")
     print()
     d = pd.DataFrame(rows).groupby(["event", "level", "model"], as_index=False).si_gain_db.mean()
@@ -390,7 +394,7 @@ def evaluate_synthetic(nets):
         wide[b] = col.reindex(wide.index)
 
     summary, paired = [], []
-    for name in nets:
+    for name in names(nets):
         for level, g in wide[name].groupby(level="level"):
             mean, lo, hi = bootstrap(g.to_numpy(), E["bootstrap_draws"], CFG["seed"])
             summary.append(dict(model=name, level=level, si_gain_db=mean, lo=lo, hi=hi))
@@ -408,7 +412,7 @@ def evaluate_synthetic(nets):
     print("SI-SDR gain (dB) per input SNR. Brackets = 95% interval.\n")
     levels = E["levels_db"]
     print(f"{'Model':26}" + "".join(f"{str(lv) + ' dB':>20}" for lv in levels))
-    show = [(b, wide[b]) for b in base] + [(n, wide[n]) for n in nets]
+    show = [(b, wide[b]) for b in base] + [(n, wide[n]) for n in names(nets)]
     for name, col in show:
         cells = []
         for lv in levels:
@@ -417,7 +421,7 @@ def evaluate_synthetic(nets):
             cells.append(f"{mean:+.2f} [{lo:+.1f},{hi:+.1f}]")
         print(f"{name:26}" + "".join(f"{c:>20}" for c in cells))
     print("\njDAS minus bandpass / minus f-k (dB, 'yes' = 95% interval excludes zero):")
-    for name in nets:
+    for name in names(nets):
         for b in ("Bandpass", "f-k"):
             p = paired[(paired.model == name) & (paired.minus == b)]
             cells = [f"{r.si_gain_db:+.2f} {'yes' if r.lo > 0 or r.hi < 0 else 'no'}" for r in p.itertuples()]
@@ -444,7 +448,7 @@ def main():
         train(a.seed, a.scratch, a.epochs, a.steps, a.batch, a.patience, a.lr)
         return
     nets = denoisers()
-    print("jDAS models:", ", ".join(nets))
+    print("jDAS models:", ", ".join(names(nets)))
     if a.only != "synthetic":
         evaluate_detection(nets)
     if a.only != "detection":
