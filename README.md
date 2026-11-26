@@ -1,6 +1,6 @@
 # Denoising DAS data with seisDAE, jDAS and a 2-D U-Net
 
-**Objective.** Use seisDAE (Steinberg et al., 2023; code https://github.com/JanisHe/seisDAE) to denoise distributed acoustic sensing (DAS) data.
+**Objective.** Use seisDAE (Steinberg et al., 2025; code https://github.com/JanisHe/seisDAE) to denoise distributed acoustic sensing (DAS) data.
 
 **What we did.** We retrained the original seisDAE network on 60 s windows of the public Ridgecrest DAS dataset (California, 2020), both from scratch and by fine-tuning the released model, with three seeds each. After a first review we added (i) a check of the released seisDAE on public land and ocean-bottom seismometer data, (ii) jDAS, a published self-supervised multi-channel DAS denoiser, and (iii) our own supervised 2-D U-Net that sees all channels at once. Everything was compared with standard filters on test days that were not used for training or for choosing settings. The test days were, however, reused across versions of this pipeline (see Limitations).
 
@@ -264,7 +264,7 @@ python -m src.unet2d evaluate
 
 ## References
 
-- Steinberg, A., et al. (2023). *Neural Network Based Denoising of Regional Seismic Waveforms and Impact on Analysis of North Korean Nuclear Tests.* Code: https://github.com/JanisHe/seisDAE
+- Steinberg, A., Gaebler, P., Hartmann, G., Lehr, J., & Pilger, C. (2025). Deep neural networks based denoising of regional seismic waveforms and impact on analysis of North Korean nuclear tests. *Pure and Applied Geophysics*, 182, 4977–4997 (published online 2024). https://doi.org/10.1007/s00024-024-03491-3 Code: https://github.com/JanisHe/seisDAE
 - Atterholt, J., et al. (2022). A unified wavefield-partitioning approach for distributed acoustic sensing. *Geophys. J. Int.*, 228, 1410–1418. https://doi.org/10.1093/gji/ggab407
 - Lapins, S., et al. (2024). DAS-N2N: machine learning DAS signal denoising without clean data. *Geophys. J. Int.*, 236, 1026–1041. https://doi.org/10.1093/gji/ggad460
 - van den Ende, M., Lior, I., Ampuero, J.-P., Sladen, A., Ferrari, A., & Richard, C. (2023). A self-supervised deep learning approach for blind denoising and waveform coherence enhancement in distributed acoustic sensing data. *IEEE Trans. Neural Netw. Learn. Syst.*, 34(7), 3371–3384. https://doi.org/10.1109/TNNLS.2021.3132832 Code: https://github.com/martijnende/jDAS
