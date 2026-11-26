@@ -328,3 +328,10 @@ Review asked for a better model, other papers, and a check of the model on a pub
 - **v2 and v3, after v1's test result was seen:** v1 was weak in detection and above 0 dB, so v2 (test-like mixing, 25% noise-only samples) and v3 (predicting the noise) were written. To avoid choosing by test results, the version was chosen on validation days by a rule fixed before running (highest mean SI-SDR gain). v1 won. All three versions are reported on test; the headline uses v1 with three seeds.
 - **Labelling correction:** in the first console printouts of the jDAS and U-Net comparisons the synthetic-test "Bandpass" column was described as 1–10 Hz; it is the 0.5–45 Hz bandpass chosen earlier on validation days (and f-k is 250 m/s). The tables in README and `docs/results.md` state this.
 - `src/final_table.py` builds the final comparison from the saved CSV files; `src/quick_check.py` checks the repository on a new computer in 1–2 minutes.
+
+### U-Net v4 and the onset-SNR measure: plan fixed before running — 27 November 2026
+
+- **Finding that motivated it (after test results were seen):** in recorded test windows the 2-D U-Net keeps vehicle arrivals, which a 1–10 Hz bandpass removes (paper Figure 8). Its supervised targets are recorded earthquake windows that contain traffic, so it is taught to keep traffic.
+- **v4:** v1 unchanged except that each training and validation target is passed through the f-k filter keeping apparent velocities above 250 m/s (vehicles move at about 10–30 m/s); the noisy input is not filtered. Seed 2026.
+- **Rule, fixed before v4 is trained:** on validation days, v4 replaces v1 as the headline U-Net only if its detection AUC is higher than v1's and its mean SI-SDR gain is at most 1 dB lower. Whatever the rule says, v4 is reported on test.
+- **Onset SNR (`src/onset_snr.py`):** the continuous SNR of Steinberg et al. (2025, section 4.2) — peak-to-peak in 0.5 s over the RMS of the 2 s before — maximised over P − 0.5 s to P + 3 s, median over channels, on the recorded 73 test earthquake and 210 test noise windows. Added to match the seisDAE paper's evaluation; not used to choose anything.

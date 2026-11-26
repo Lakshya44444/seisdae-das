@@ -516,11 +516,99 @@ def fig_data(fam):
     save(fig, "fig13_field_windows")
 
 
+def fig_timefreq():
+    """Figures in the style of Steinberg et al. (2025): waveform + spectrogram, and the continuous SNR."""
+    from scipy.signal import spectrogram
+
+    from . import build, unet2d
+    from .build import load_gather, manifest
+    from .das import geometry
+    from .evaluate import original
+    from .methods import ROOT, SeisDAE, bandpass
+    from .onset_snr import continuous_snr
+
+    import tensorflow as tf
+
+    tf.get_logger().setLevel("ERROR")
+    m = original(manifest())
+    ev = m[(m.kind == "strong") & (m.split == "test")].sort_values("magnitude")
+    ft = ROOT / "models/variants/finetune_s2026"
+    nets = {"Recorded": lambda x: x, "Bandpass 1–10 Hz": lambda x: bandpass(x, (1, 10)),
+            "seisDAE fine-tuned": SeisDAE(ft.with_suffix(".h5"), ft.with_suffix(".config")),
+            "2-D U-Net v1": unet2d.UNet2D(unet2d.RUNS / "s2026.h5")}
+    if (unet2d.RUNS / "v4_s2026.h5").exists():
+        nets["2-D U-Net v4 (traffic-free targets)"] = unet2d.UNet2D(unet2d.RUNS / "v4_s2026.h5")
+
+    # fig14: one event, the channel with the highest recorded SNR
+    r = ev.iloc[len(ev) // 2]
+    g = load_gather(r.id)
+    ch = int(np.argmax(build.selection_snr(r.id)))
+    outs = {k: f(g)[ch] for k, f in nets.items()}
+    t = np.arange(g.shape[1]) / 100
+    fig, axes = plt.subplots(len(outs), 2, figsize=(7.2, 1.45 * len(outs) + 0.6), sharex=True,
+                             gridspec_kw=dict(width_ratios=[1, 1.15]))
+    _, _, ref = spectrogram(outs["Recorded"], fs=100, nperseg=128, noverlap=120)
+    top = 10 * np.log10(ref.max())
+    for i, (name, y) in enumerate(outs.items()):
+        ax = axes[i, 0]
+        ax.plot(t, y / np.abs(y).max(), color="black", lw=0.5)
+        ax.axvline(r.itp / 100, color="#D55E00", lw=0.8, ls="--")
+        ax.axvline(r.its / 100, color="#0072B2", lw=0.8, ls="--")
+        ax.set_ylabel(name, fontsize=7)
+        ax.set_yticks([])
+        ax.set_xlim(5, 40)
+        ff, tt, S = spectrogram(y, fs=100, nperseg=128, noverlap=120)
+        im = axes[i, 1].pcolormesh(tt, ff, 10 * np.log10(S + 1e-30), vmin=top - 60, vmax=top, cmap="magma",
+                                   shading="auto")
+        axes[i, 1].set_ylim(0, 40)
+        axes[i, 1].set_ylabel("Hz", fontsize=7)
+        axes[i, 1].grid(False)
+    axes[0, 0].set_title(f"{r.id} (M{r.magnitude:.1f}, {r.dist_km:.0f} km), channel {ch}; "
+                         "dashed: predicted P (orange), S (blue)", fontsize=7.5, loc="left")
+    axes[0, 1].set_title("Spectrogram (dB, same scale)", fontsize=7.5, loc="left")
+    axes[-1, 0].set_xlabel("Time (s)")
+    axes[-1, 1].set_xlabel("Time (s)")
+    fig.colorbar(im, ax=axes[:, 1], shrink=0.6, label="Power (dB)")
+    save(fig, "fig14_waveform_spectrogram")
+
+    # fig15: the six largest clean test earthquakes, continuous SNR (as Steinberg et al. 2025, Fig. 7)
+    big = ev.sort_values("magnitude", ascending=False).head(6)
+    show = {"Recorded": "#D55E00", "Bandpass 1–10 Hz": "#8E44AD", "2-D U-Net v1": "black"}
+    if "2-D U-Net v4 (traffic-free targets)" in nets:
+        show["2-D U-Net v4 (traffic-free targets)"] = "#0072B2"
+    fig, axes = plt.subplots(len(big), 1, figsize=(7.2, 1.25 * len(big) + 0.5), sharex=True)
+    for ax, r in zip(axes, big.itertuples()):
+        g = load_gather(r.id)
+        ch = int(np.argmax(build.selection_snr(r.id)))
+        for k, (name, col) in enumerate(show.items()):
+            y = nets[name](g)[ch]
+            sl = slice(int(r.itp) - 300, int(r.itp) + 600)
+            tt = t[sl] - r.itp / 100
+            ax.plot(tt, y[sl] / np.abs(y[sl]).max() * 0.45 + 0, color=col, lw=0.6, alpha=0.9,
+                    label=name if r.Index == big.index[0] else None)
+            if name != "Recorded":
+                snr = continuous_snr(y[None])[0, sl]
+                ax.plot(tt, snr / np.nanmax(snr) * 0.45 - 1.0, color=col, lw=1.0, ls="-")
+        ax.text(-2.95, 0.55, f"{r.id}  M{r.magnitude:.1f}  {r.dist_km:.0f} km  ch {ch}", fontsize=6.5)
+        ax.set_yticks([0, -0.78], ["waveform", "SNR(t)"], fontsize=6.5)
+        ax.axvline(0, color="#999999", lw=0.6)
+        ax.set_ylim(-1.1, 0.7)
+        ax.grid(False)
+    axes[-1].set_xlabel("Time after predicted P (s)")
+    fig.legend(loc="upper center", ncol=len(show), fontsize=7, frameon=False)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    save(fig, "fig15_continuous_snr")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--data", action="store_true", help="also the figures that need data and models")
+    p.add_argument("--timefreq", action="store_true", help="only the waveform/spectrogram and continuous-SNR figures")
     a = p.parse_args()
     print("Figures in results/figures/paper/:")
+    if a.timefreq:
+        fig_timefreq()
+        return
     fam = per_event_families()
     fig_map()
     fig_public()
@@ -532,6 +620,7 @@ def main():
     fig_training()
     if a.data:
         fig_data(fam)
+        fig_timefreq()
 
 
 if __name__ == "__main__":

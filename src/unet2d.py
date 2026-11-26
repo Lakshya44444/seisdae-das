@@ -9,6 +9,7 @@ fiber, and it learns what our noise (traffic, common-mode residue) looks like.
   python -m src.unet2d train                 first version v1 (seed 2026)
   python -m src.unet2d train --preset v2     test-like mixing + 25 % noise-only samples
   python -m src.unet2d train --preset v3     v2, but the network predicts the noise (output = input - noise)
+  python -m src.unet2d train --preset v4     v1 with traffic-free targets (f-k > 250 m/s applied to the target only)
   python -m src.unet2d validate              compare versions on VALIDATION days, pick one by a fixed rule
   python -m src.unet2d evaluate              detection + synthetic tests on test days (same as the other models)
 
@@ -101,6 +102,10 @@ PRESETS = {
     "v1": dict(matched=False, noise_only=0.0, residual=False, steps=50),
     "v2": dict(matched=True, noise_only=0.25, residual=False, steps=100),
     "v3": dict(matched=True, noise_only=0.25, residual=True, steps=100),
+    # v4: v1 with traffic-free targets. The target earthquake is passed through an
+    # f-k filter keeping apparent velocities above 250 m/s (vehicles are ~10-30 m/s),
+    # so the network is no longer taught to keep traffic. The input is unchanged.
+    "v4": dict(matched=False, noise_only=0.0, residual=False, steps=50, target_fk=250),
 }
 
 
@@ -112,6 +117,15 @@ def read_settings(h5):
 
 
 # ------------------------------------------------------------------ training data
+def clean_targets(sig, vmin):
+    """Traffic-free training targets: f-k filter (apparent velocity > vmin) of each earthquake gather."""
+    from .das import geometry
+    from .methods import fk
+
+    dx = geometry()[2]
+    return [fk(g.astype(np.float64), dx, vmin).astype("float32") for g in sig]
+
+
 def load_split(split):
     m = manifest()
     ev = m[(m.kind == "strong") & (m.split == split)]
@@ -122,7 +136,7 @@ def load_split(split):
     return sig, noise
 
 
-def sample(sig, noise, n, rng, matched=False, noise_only=0.0):
+def sample(sig, noise, n, rng, matched=False, noise_only=0.0, targets=None):
     """n training pairs (input, target), each (CROP_CH, CROP_T, 1).
 
     matched=False (v1): SNR set on the crop itself.
@@ -131,11 +145,15 @@ def sample(sig, noise, n, rng, matched=False, noise_only=0.0):
       synthetic test; the noise gather is aligned channel by channel.
     noise_only: share of samples that are pure noise with target zero, so the
       model also learns to output nothing when there is no earthquake.
+    targets: optional list parallel to sig; the target is cropped from it instead
+      of from sig (v4: traffic-free targets). Mixing levels still use sig.
     """
     x = np.zeros((n, CROP_CH, CROP_T, 1), dtype="float32")
     y = np.zeros_like(x)
     for b in range(n):
-        s = sig[rng.integers(len(sig))]
+        k_sig = rng.integers(len(sig))
+        s = sig[k_sig]
+        tgt = s if targets is None else targets[k_sig]
         nz = noise[rng.integers(len(noise))]
         c = rng.integers(0, s.shape[0] - CROP_CH + 1)
         if rng.random() < 0.8:
@@ -152,11 +170,13 @@ def sample(sig, noise, n, rng, matched=False, noise_only=0.0):
             t2 = rng.integers(0, nz.shape[1] - CROP_T + 1)
             cn = nz[c2:c2 + CROP_CH, t2:t2 + CROP_T]
             k = np.sqrt(np.sum(cs ** 2) / (np.sum(cn ** 2) * 10 ** (level / 10) + 1e-30))
+        ct = tgt[c:c + CROP_CH, t:t + CROP_T]
         if rng.random() < noise_only:
-            cs = np.zeros_like(cs)
+            ct = np.zeros_like(cs)
             mix = cn
         else:
             mix = cs + k * cn
+        cs = ct
         if rng.integers(2):
             mix, cs = mix[::-1], cs[::-1]
         sign = rng.integers(2) * 2 - 1
@@ -175,15 +195,15 @@ def train(seed, preset, epochs, batch, patience, lr):
     steps = cfg["steps"]
 
     class Batches(keras.utils.Sequence):
-        def __init__(self, sig, noise, rng):
+        def __init__(self, sig, noise, rng, targets=None):
             super().__init__()
-            self.sig, self.noise, self.rng = sig, noise, rng
+            self.sig, self.noise, self.rng, self.targets = sig, noise, rng, targets
 
         def __len__(self):
             return steps
 
         def __getitem__(self, i):
-            return sample(self.sig, self.noise, batch, self.rng, cfg["matched"], cfg["noise_only"])
+            return sample(self.sig, self.noise, batch, self.rng, cfg["matched"], cfg["noise_only"], self.targets)
 
     RUNS.mkdir(parents=True, exist_ok=True)
     name = f"s{seed}" if preset == "v1" else f"{preset}_s{seed}"
@@ -193,8 +213,13 @@ def train(seed, preset, epochs, batch, patience, lr):
     print(f"U-Net with {model.count_params():,} parameters")
     tr_sig, tr_noise = load_split("train")
     va_sig, va_noise = load_split("validation")
-    val_x, val_y = sample(va_sig, va_noise, 256, np.random.default_rng(seed + 1), cfg["matched"], cfg["noise_only"])
-    data = Batches(tr_sig, tr_noise, np.random.default_rng(seed))
+    tr_tgt = va_tgt = None
+    if cfg.get("target_fk"):
+        print(f"traffic-free targets: f-k filter > {cfg['target_fk']} m/s")
+        tr_tgt, va_tgt = clean_targets(tr_sig, cfg["target_fk"]), clean_targets(va_sig, cfg["target_fk"])
+    val_x, val_y = sample(va_sig, va_noise, 256, np.random.default_rng(seed + 1), cfg["matched"], cfg["noise_only"],
+                          va_tgt)
+    data = Batches(tr_sig, tr_noise, np.random.default_rng(seed), tr_tgt)
     best = model.evaluate(val_x, val_y, batch_size=batch, verbose=0)
     print(f"validation loss before training {best:.4f}")
     model.save_weights(str(RUNS / f"{name}.h5"))
@@ -273,14 +298,22 @@ def validate():
     print("SI-SDR gain (dB) per input SNR, mean, and detection AUC:\n")
     print(table.round(2).to_string())
     best = [i for i in table.index if i.startswith("unet2d")][0]
-    print(f"\nChosen by the fixed rule (highest mean SI-SDR gain among U-Nets): {best}")
+    print(f"\nRule 1 (26 Nov, v1-v3): highest mean SI-SDR gain among U-Nets: {best}")
+    if "unet2d_v4_s2026" in table.index and "unet2d_s2026" in table.index:
+        v1, v4 = table.loc["unet2d_s2026"], table.loc["unet2d_v4_s2026"]
+        ok = v4["detection AUC"] > v1["detection AUC"] and v4["mean"] >= v1["mean"] - 1.0
+        print("Rule 2 (27 Nov, v4 vs v1, fixed before v4 was trained): v4 replaces v1 if its detection AUC is higher "
+              "and its mean SI-SDR gain is at most 1 dB lower.")
+        print(f"  v1: AUC {v1['detection AUC']:.3f}, mean SI-SDR {v1['mean']:+.2f} dB;  "
+              f"v4: AUC {v4['detection AUC']:.3f}, mean SI-SDR {v4['mean']:+.2f} dB  ->  "
+              f"{'v4 replaces v1' if ok else 'v1 stays'}")
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("command", choices=["train", "validate", "evaluate"])
     p.add_argument("--preset", choices=list(PRESETS), default="v1",
-                   help="v1 first version; v2 test-like mixing + noise-only samples; v3 = v2 predicting the noise")
+                   help="v1 first version; v2 test-like mixing + noise-only samples; v3 = v2 predicting the noise; v4 = v1 with traffic-free targets")
     p.add_argument("--seed", type=int, default=CFG["seed"])
     p.add_argument("--epochs", type=int, default=60)
     p.add_argument("--batch", type=int, default=8)
