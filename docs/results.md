@@ -96,6 +96,6 @@ No method is a clear winner. The intervals overlap, and the paired differences b
     - **Test days, v1, mean over 3 seeds per event:** SI-SDR gain −0.23, −0.57, −1.16, −2.30, −4.32 dB at −10, −5, 0, 5, 10 dB. Paired against the others: see the README table. In short, better than f-k at every level (19/19 events) and than released seisDAE and jDAS; better than retrained seisDAE at +5 and +10 dB; level with the 0.5–45 Hz bandpass at −10 to 0 dB, below it at +5 and +10 dB.
     - **Single seeds** at 0 dB: −1.25, −1.03, −1.19 dB (seeds 2026–2028). Detection AUC 0.581, 0.585, 0.579; each run is significantly below the 1–10 Hz bandpass (by 0.049–0.054).
     - **v2 and v3 on test:** SI-SDR at 0 dB −2.17 and −2.09 dB; AUC 0.575 and 0.586. Both below v1, as on validation.
-    - Training: about 15–22 s per epoch on a laptop CPU; early stopping after 20–37 epochs. Two runs had one diverging epoch (v3 epoch 8, seed 2027 epoch 32); the saved weights are from the best epoch before it.
+    - Training: about 15–22 s per epoch on a laptop CPU; early stopping after 12–37 epochs (v1: 31–37, v2: 12, v3: 14). Two runs had one diverging epoch (v3 epoch 8, seed 2027 epoch 32); the saved weights are from the best epoch before it.
 
 The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_retuned_*.csv`, `detection_sensitivity_test.csv`, `variants_*.csv`, `synthetic_seeds_*.csv`). The figures are in `results/roc.png` and `results/figures/`.
