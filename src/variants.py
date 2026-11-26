@@ -38,7 +38,7 @@ def models():
 
 
 def family(name):
-    return re.sub(r"_s\d+$", "", name)
+    return re.sub(r"_s\d+", "", name)
 
 
 def score():
@@ -98,11 +98,20 @@ NAMES = {"Noisy": "Raw data", "Bandpass 1-10 Hz": "Bandpass 1-10 Hz", "f-k 1000 
          "released": "seisDAE released"}
 
 
+KINDS = {"scratch": "From scratch", "finetune": "Fine-tuned", "jdas_pretrained": "jDAS released",
+         "jdas_finetune": "jDAS fine-tuned", "jdas_scratch": "jDAS from scratch"}
+
+
 def label(model):
+    """Readable name, e.g. jdas_finetune_s2026_bp -> 'jDAS fine-tuned, seed 2026 + bp'."""
     if model in NAMES:
         return NAMES[model]
-    kind, seed = model.rsplit("_s", 1)
-    return f"{'From scratch' if kind == 'scratch' else 'Fine-tuned'}, seed {seed}"
+    m = re.fullmatch(r"(.+?)(?:_s(\d+))?(_bp)?", model)
+    kind, seed, bp = m.groups()
+    text = KINDS.get(kind, kind)
+    if seed:
+        text += f", seed {seed}"
+    return text + (" + bp" if bp else "")
 
 
 def diff(r, base):
@@ -117,23 +126,21 @@ def print_table(table, summary, n_eq, n_noise):
     """Readable summary: one line per model; the full numbers stay in the CSV files."""
     print(f"\nDetection test: {n_eq} earthquake windows, {n_noise} noise windows (test days)")
     print("AUC: 0.5 = chance, 1 = perfect. Brackets = 95% interval. 'sig' = interval excludes zero.\n")
-    head = f"{'Model':26}{'AUC [95% interval]':24}{'vs bandpass':30}{'vs released':30}"
+    head = f"{'Model':34}{'AUC [95% interval]':24}{'vs bandpass':30}{'vs released':30}"
     print(head)
-    print(f"{'':50}{'diff [interval] sig':30}{'diff [interval] sig':30}")
+    print(f"{'':58}{'diff [interval] sig':30}{'diff [interval] sig':30}")
     print("-" * len(head))
     order = {"Noisy": 0, "Bandpass 1-10 Hz": 1, "f-k 1000 m/s": 2, "released": 3}
-    rank = lambda m: order.get(m, 4 if m.startswith("scratch") else 5)
+    rank = lambda m: order.get(m, 4 if m.startswith("scratch") else 5 if m.startswith("finetune") else 6)
     for _, r in table.sort_values("model", key=lambda c: c.map(lambda m: (rank(m), m))).iterrows():
         auc = f"{r.auc:.3f} [{r.lo:.3f}, {r.hi:.3f}]"
-        print(f"{label(r.model):26}{auc:24}{diff(r, 'Bandpass 1-10 Hz'):30}{diff(r, 'released'):30}")
+        print(f"{label(r.model):34}{auc:24}{diff(r, 'Bandpass 1-10 Hz'):30}{diff(r, 'released'):30}")
     print("\nPer training type:")
-    for fam in ("released", "scratch", "finetune"):
-        if fam not in summary.index:
-            continue
+    for fam in summary.index:
         r = summary.loc[fam]
-        name = {"scratch": "From scratch", "finetune": "Fine-tuned", "released": "Released"}[fam]
+        name = label(fam) if fam != "released" else "Released"
         spread = f"range {r.min_auc:.3f} to {r.max_auc:.3f}" if r.runs > 1 else "single run"
-        print(f"  {name:14} {int(r.runs)} run(s)   mean AUC {r.mean_auc:.3f}   {spread}")
+        print(f"  {name:24} {int(r.runs)} run(s)   mean AUC {r.mean_auc:.3f}   {spread}")
     print("\nFull numbers: results/variants_auc.csv, results/variants_summary.csv")
 
 if __name__ == "__main__":

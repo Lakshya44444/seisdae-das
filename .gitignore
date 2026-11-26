@@ -12,3 +12,4 @@ old_runs/
 results/example_*.npz
 models/variants/
 data/public/
+models/jdas/
