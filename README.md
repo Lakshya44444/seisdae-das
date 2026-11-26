@@ -125,6 +125,8 @@ src/
   unet2d.py          our supervised 2-D U-Net (channels x time), trained on train-day mixtures
   jdas_diagnose.py   why jDAS fails here: clean-signal test, coherence, common-mode removal
   public_check.py    released seisDAE on public land and ocean-bottom seismometer data
+  denoise_file.py    denoise your own file (miniSEED/SAC/SEG-Y, .npy, .h5) with every method
+  paper_figures.py   all figures of the paper (results/figures/paper/)
   final_table.py     final comparison of every method, read from results/*.csv
   quick_check.py     1-2 minute check that the repository works on a new computer
   synthetic_seeds.py the same variants on the synthetic SI-SDR test
@@ -251,6 +253,14 @@ Our 2-D U-Net (same tests):
 python -m src.unet2d train
 python -m src.unet2d evaluate
 ```
+
+### Your own data
+
+```
+python -m src.denoise_file record.mseed
+python -m src.denoise_file gather.npy --fs 250 --dx 8 --seconds 60
+```
+Reads any ObsPy format (sampling rate from the headers) or a `(channels, time)` array (`.npy`, `.npz`, `.h5`, give `--fs`). Runs the bandpass, both seisDAE models and, with 8 or more channels, the 2-D U-Net (and f-k if `--dx` is given); saves all outputs and a before/after figure next to the input. The DAS models were trained on one Ridgecrest fiber section and may need retraining for another array. For long DAS records use `--start`/`--seconds` to keep memory small.
 
 ### If something fails
 
