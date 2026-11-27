@@ -1,7 +1,7 @@
 """Re-tune the baselines for detection on non-test days, then report every setting on test days.
 
   python -m src.detection_tuning                     tune on validation days (6 strong earthquakes)
-  python -m src.detection_tuning --tune-on non-test  tune on train + validation days (30 days)
+  python -m src.detection_tuning --tune-on non-test  tune on train + validation days (29 days)
 
 Bandpass and f-k have no trained parameters, so train days are fair tuning data
 for them. The cascade velocity is also scored on train days, where seisDAE has

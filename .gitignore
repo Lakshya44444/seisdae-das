@@ -18,4 +18,3 @@ data/public/
 models/jdas/
 models/unet2d/*
 !models/unet2d/s2026.h5
-!models/unet2d/s2026.json

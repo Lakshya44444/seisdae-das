@@ -14,11 +14,11 @@ All DAS numbers are on the test days. Items 9–11 were added after the first re
 | seisDAE trained on DAS | 0.638 [0.561, 0.714] | 0.849 [0.759, 0.920] |
 | seisDAE trained on DAS + f-k 250 m/s | 0.671 [0.599, 0.742] | 0.759 [0.653, 0.850] |
 
-No method is a clear winner. The intervals overlap, and the paired differences below include zero. The M ≥ 1.5 column rests on 23 events.
+No method is a clear winner. The intervals overlap, and the paired differences between the denoising methods below include zero (bandpass and f-k are, however, significantly above the raw data). The M ≥ 1.5 column rests on 23 events.
 
 **Synthetic test:** waveform shape at 0 dB input SNR, as SI-SDR gain in dB (0 = unchanged). Raw 0, bandpass 0.5–45 Hz −0.82, f-k −4.14, released seisDAE −8.51, seisDAE trained on DAS from scratch −4.37 [−7.77, −1.21] (seeds 2027, 2028: −3.60, −4.89), fine-tuned −2.95, −2.41, −2.38 (seeds 2026–2028), cascade −10.29. All seeds: `results/synthetic_seeds_*.csv`.
 
-1. **Released seisDAE does not transfer to DAS waveforms.** It had the lowest SI-SDR gain of the single-stage methods at every input SNR.
+1. **Released seisDAE does not transfer to DAS waveforms.** Among the seisDAE models and the filters it had the lowest SI-SDR gain at every input SNR; the jDAS versions added later (item 10) are lower still.
 2. **Training on DAS helps compared with the released model.** All six retrained runs were better than the released model in SI-SDR gain at every input SNR: from scratch by 3.2–6.1 dB, fine-tuned by 5.4–7.4 dB. Every paired 95% interval excludes zero (13–19 of 19 test events per comparison).
    - **In SI-SDR (waveform shape), fine-tuning did better than training from scratch.** At every input SNR from −5 to 10 dB, all three fine-tuned runs scored above all three from-scratch runs (at 0 dB: −2.4 to −3.0 dB versus −3.6 to −4.9 dB). This was not tested with a paired interval, and the two used different training budgets.
    - **Against the filters.** At −10 dB input SNR all six runs beat the f-k filter (paired intervals exclude zero); at −5 dB the three fine-tuned runs and one from-scratch run do; at 0 dB and above none does. No run beat the 0.5–45 Hz bandpass with an interval excluding zero, and at 5 and 10 dB all six were worse than it.
@@ -61,7 +61,7 @@ No method is a clear winner. The intervals overlap, and the paired differences b
    - In detection AUC, fine-tuning did not improve on training from scratch. Starting from the released weights did not avoid the seed spread either (one fine-tuned run, 0.604, is level with the released model).
    - The best single run (from scratch, seed 2027, 0.662) is not used as the headline number, because it was not chosen in advance.
 
-9. **Released seisDAE on public seismometer data (`src/public_check.py`, `results/public_check_*.csv`, `results/figures/public_check_examples.png`).** Released model, unchanged. Land: IU.ANMO.00.BHZ, 2016–2020, 100 records. Ocean bottom: Cascadia Initiative 7D BHZ, Aug 2013 – Jun 2014, 164 records from 2 stations per event. Events M ≥ 4 at 1–8° (USGS), windows aligned on the iasp91 P time, 100 Hz.
+9. **Released seisDAE on public seismometer data (`src/public_check.py`, `results/public_check_*.csv`, `results/figures/public_check_examples.png`).** Released model, unchanged. Land: IU.ANMO.00.BHZ, 2016–2020, 100 records. Ocean bottom: Cascadia Initiative 7D BHZ, Aug 2013 – Jun 2014, 164 records from 87 events (77 events with two records, 10 with one) at 19 stations. IU.ANMO.00 recorded with a Geotech KS-54000 at 20 samples/s until 9 July 2018 (51 of the 100 land records, which therefore hold nothing above 10 Hz) and with a Streckeisen STS-6A at 40 samples/s afterwards; the 7D BHZ channels are broadband (Trillium Compact or Güralp CMG-3T) at 40–50 samples/s. No instrument response is removed. Events M ≥ 4 at 1–8° (USGS), windows aligned on the iasp91 P time, 100 Hz.
 
    | | Land (IU.ANMO) | Ocean bottom (7D) |
    |---|---|---|
@@ -71,7 +71,7 @@ No method is a clear winner. The intervals overlap, and the paired differences b
    | seisDAE minus bandpass, synthetic, significant at | +5 dB (+3.02) and +10 dB (+4.77); worse but not significant at −10 dB (−2.38 [−4.53, +0.04]) | +10 dB only (+3.89 [1.57, 6.13]) |
 
    - The real-record SNR gain also rewards removing pre-event noise, so the synthetic test is shown beside it.
-   - Conclusion: on the data type it was built for, the released seisDAE clearly works (large real-record gain; synthetic gain at least level with the bandpass, better at high SNR). Its failure on DAS is therefore a change of data type, not a fault of the model or of our code.
+   - Conclusion: on the data type it was built for, the released seisDAE clearly works (large real-record gain; in the synthetic test better than the bandpass at high input SNR, level or worse at low input SNR, e.g. −2.38 dB [−4.53, +0.04] on land at −10 dB). The real-record gain needs the control in item 13. Its failure on DAS is therefore a change of data type, not a fault of the model or of our code.
 
 10. **jDAS (`src/jdas.py`, `results/synthetic_jdas_*.csv`, `results/jdas_*`).** Released network rebuilt layer by layer; `python -m src.jdas check` gives a relative difference of 0 to the released file. Fine-tuned and trained from scratch on train-day windows (self-supervised, 40 epochs, seed 2026); validation loss fell from 0.157 to 0.140 (fine-tuned) and from 0.177 to 0.140 (from scratch).
 
@@ -84,7 +84,7 @@ No method is a clear winner. The intervals overlap, and the paired differences b
     | From scratch | 0.544 [0.463, 0.626] | −8.92 [−11.5, −6.6] |
     | From scratch + bandpass 1–10 Hz | 0.618 [0.539, 0.695] | −14.02 |
 
-    - Every jDAS version is below the synthetic-test bandpass and f-k at every input SNR (all paired intervals exclude zero). Without the bandpass, every version is also significantly below the detection bandpass.
+    - Every jDAS version is below the synthetic-test bandpass and f-k at every input SNR (all paired intervals exclude zero). Without the post-filter, every version is significantly below the detection bandpass; with it, the fine-tuned version still is (−0.030 [−0.061, −0.001]), the others are not significantly different.
     - The 1–10 Hz bandpass after jDAS lowers SI-SDR because the references carry energy outside 1–10 Hz: on clean references (no noise added) a 1–10 Hz bandpass alone scores −3.6 dB.
     - **Diagnosis (`src/jdas_diagnose.py`).**
       - The 96-channel common-mode removal in our preprocessing is not the cause. On 6 test events downloaded again, it removed 1.5% of the earthquake-window energy, and neighbour coherence was 0.70 without it and 0.69 with it. jDAS kept the clean signal equally in both cases (SI-SDR +6.1 and +5.9 dB, no noise added). This repeats the earlier check of 22 November (V4.1).
