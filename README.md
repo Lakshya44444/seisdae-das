@@ -4,6 +4,127 @@
 
 **What we did.** We retrained the original seisDAE network on 60 s windows of the public Ridgecrest DAS dataset (California, 2020), both from scratch and by fine-tuning the released model, with three seeds each. After a first review we added (i) a check of the released seisDAE on public land and ocean-bottom seismometer data, (ii) jDAS, a published self-supervised multi-channel DAS denoiser, and (iii) our own supervised 2-D U-Net that sees all channels at once. Everything was compared with standard filters on test days that were not used for training or for choosing settings. The test days were, however, reused across versions of this pipeline (see Limitations).
 
+## Run it yourself (for reviewers, about 15 minutes)
+
+Everything below runs on a normal laptop CPU (Windows, Linux or macOS). It needs **no large download**: the trained models and all result tables are in this repository, and the demo reads one real DAS window (about 6 MB) directly from the public SCEDC archive on AWS. The outputs shown are those of our run; yours should match (the demo numbers can differ in the last digit).
+
+### Step 0: install (once, about 5 minutes)
+
+Windows (Command Prompt, in the folder that contains `src/`):
+```
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+Linux / macOS: the same with `python3 -m venv .venv` and `source .venv/bin/activate`.
+
+### Step 1: check the installation (1–2 minutes)
+
+```
+python -m src.quick_check
+```
+Every line should say `[PASS]`; the last line reads `15 of 15 checks passed.` It loads and runs all three neural models (the released seisDAE, the DAS-trained seisDAE and the released jDAS, which must equal its original file exactly) and reads the saved results. Step 5 may say that the Ridgecrest windows are not downloaded; that is expected.
+
+### Step 2: the main results, from the saved tables (seconds)
+
+```
+python -m src.final_table
+```
+Waveform test (SI-SDR gain in dB; 0 = unchanged; higher = closer to the true earthquake) and detection test (ROC AUC; 0.5 = chance) on the held-out test days. Expected, first lines:
+```
+Method                                       -10 dB              -5 dB               0 dB               5 dB              10 dB             AUC
+Bandpass                          -0.28 [-0.5,-0.1]  -0.50 [-0.8,-0.3]  -0.82 [-1.3,-0.4]  -1.42 [-2.2,-0.8]  -2.37 [-3.5,-1.4]           0.633
+f-k                               -2.84 [-4.2,-1.6]  -3.33 [-5.0,-1.9]  -4.14 [-6.0,-2.5]  -5.54 [-7.7,-3.6] -7.76 [-10.3,-5.4]           0.640
+seisDAE released                  -5.28 [-9.0,-1.4]  -6.28 [-9.8,-2.6] -8.51 [-11.9,-5.0]-11.44 [-14.7,-8.1]-14.87 [-18.1,-11.5]           0.601
+seisDAE fine-tuned (3 seeds)      +0.79 [-1.4,+3.1]  -0.67 [-3.0,+1.7]  -2.58 [-5.1,-0.1]  -4.97 [-7.6,-2.4] -8.04 [-10.9,-5.4]0.632 (0.604-0.648)
+jDAS fine-tuned                   -5.94 [-8.0,-4.0]  -6.96 [-9.4,-4.8] -8.74 [-11.5,-6.2]-11.38 [-14.4,-8.6]-14.88 [-18.1,-11.9]           0.557
+2-D U-Net v1 (3 seeds)            -0.23 [-1.0,+0.5]  -0.57 [-1.5,+0.3]  -1.16 [-2.3,-0.1]  -2.30 [-3.8,-1.0]  -4.32 [-6.1,-2.7]0.582 (0.579-0.585)
+```
+
+```
+python -m src.onset_snr --stats-only
+```
+The onset SNR used by the seisDAE authors (Steinberg et al., 2025), on the 73 recorded test earthquakes, nothing mixed in. Expected, last lines:
+```
+Earthquake onset SNR minus bandpass, paired per event ('yes' = interval excludes zero):
+  seisDAE fine-tuned s2026    +1.16 [+0.66,+1.70] yes  higher in 49/73   AUC +0.064 [-0.004,+0.131] no
+  seisDAE released            +1.76 [+1.10,+2.48] yes  higher in 58/73   AUC +0.052 [-0.021,+0.122] no
+```
+
+### Step 3: denoise a real earthquake yourself (2–3 minutes, internet)
+
+```
+python -m src.demo
+```
+Downloads the M1.7 test earthquake eq_39290071 (12 July 2020, 27 km from the fiber) and a test noise window from the SCEDC archive, runs every method and writes four figures per window to `results/demo/<window>/`. Expected printout for the earthquake:
+```
+eq_39290071  M1.7  27 km
+  method                    onset SNR (dB)  RMS kept
+  Recorded                            17.2      1.00
+  Bandpass 1-10 Hz                    17.4      0.52
+  f-k 1000 m/s                        17.0      0.22
+  seisDAE released                    22.1      0.79
+  seisDAE DAS-trained                 19.8      0.47
+  seisDAE fine-tuned                  20.9      0.88
+  2-D U-Net (ours)                    14.8      0.43
+```
+and for the noise window (no earthquake; a good method should not raise the onset SNR here):
+```
+noise_20200627172028  (noise window)
+  Recorded                            15.4      1.00
+  Bandpass 1-10 Hz                    14.8      0.40
+  f-k 1000 m/s                        17.1      0.48
+  seisDAE released                    15.4      0.45
+  seisDAE DAS-trained                 15.3      0.26
+  seisDAE fine-tuned                  15.1      0.20
+  2-D U-Net (ours)                    14.8      0.52
+```
+Any other window can be chosen: `python -m src.demo --list` lists the 19 clean test earthquakes, then `python -m src.demo --window eq_38595986`.
+
+**What the demo figures show** (our run; yours are written to the same paths):
+
+*Gathers (channel × time).* The X-shaped slanted lines are vehicles driving along the fiber (about 25 m/s); the earthquake arrives at the bottom channels just after the predicted P time (orange dashed line, 10 s). The bandpass removes most of the traffic; the seisDAE models remove most of the background but keep the strongest arrivals, including one vehicle track; our U-Net keeps the earthquake but also much of the traffic. The horizontal line near channel 20 is a noisy channel. The f-k filter leaves vertical stripes after 40 s (edge effects of the 2-D transform).
+
+![Demo: gathers](results/demo/eq_39290071/1_gathers.png)
+
+*Waveform and spectrogram* on the channel with the highest earthquake SNR, every method on the same dB scale.
+
+![Demo: time-frequency](results/demo/eq_39290071/2_time_frequency.png)
+
+*Frequency–wavenumber spectra* (9–30 s). Energy close to the shallow dashed line (30 m/s) is slow traffic; earthquake energy lies between the steep lines (1000 m/s).
+
+![Demo: f-k spectra](results/demo/eq_39290071/3_fk_spectra.png)
+
+*Continuous SNR* (peak-to-peak in 0.5 s over the RMS of the 2 s before; Steinberg et al., 2025) around the P arrival.
+
+![Demo: continuous SNR](results/demo/eq_39290071/4_continuous_snr.png)
+
+### Step 4: the figures of the paper
+
+All in `results/figures/paper/` (PNG and PDF); `python -m src.paper_figures` redraws figures 1–8 from the tables in seconds.
+
+| Figure | What it shows |
+|---|---|
+| ![](results/figures/paper/fig01_map_events.png) | **Study area.** Fiber, the 96 channels used (760 m), earthquakes by split; magnitude vs distance. |
+| ![](results/figures/paper/fig02_public_check.png) | **Released seisDAE on public seismometers.** Land IU.ANMO and ocean-bottom 7D: +14.9 and +12.2 dB SNR gain vs +3.6 and +2.0 dB for a bandpass. |
+| ![](results/figures/paper/fig09_gathers_synthetic.png) | **All methods on one test earthquake** mixed with recorded noise at 0 dB (the event with the median U-Net score). |
+| ![](results/figures/paper/fig03_synthetic_sisdr.png) | **Waveform test.** SI-SDR gain vs input SNR for every method. |
+| ![](results/figures/paper/fig14_waveform_spectrogram.png) | **Time–frequency.** Waveform and spectrogram per method on one channel. |
+| ![](results/figures/paper/fig15_continuous_snr.png) | **Continuous SNR** for the six largest test earthquakes, as in Steinberg et al. (2025, Fig. 7). |
+| ![](results/figures/paper/fig11_spectra.png) | **Average spectra** of the 19 test earthquakes: what each method keeps in each frequency band. |
+| ![](results/figures/paper/fig12_fk_spectra.png) | **f-k spectra** of the example event: reference, noisy input, bandpass, U-Net. |
+| ![](results/figures/paper/fig13_field_windows.png) | **Recorded windows, nothing mixed:** an earthquake and a noise window through bandpass, seisDAE and U-Net. |
+| ![](results/figures/paper/fig05_detection.png) | **Detection test.** ROC curves and AUC for every model and seed. |
+| ![](results/figures/paper/fig08_jdas_diagnosis.png) | **Why jDAS fails here.** Neighbouring channels correlate only ~0.7; common-mode removal is not the cause. |
+
+### Step 5: your own file
+
+```
+python -m src.denoise_file your_record.mseed
+python -m src.denoise_file your_gather.npy --fs 250 --dx 8 --seconds 60
+```
+Seismometer files (miniSEED, SAC, ...) or a DAS array `(channels, time)`; writes all outputs and a before/after figure next to the file. The DAS models were trained on this Ridgecrest fiber only; on another array they may need retraining.
+
 ## Description
 
 DAS turns an optical fiber into thousands of closely spaced strain sensors. Roadside fiber records earthquakes, but also strong traffic noise, noise common to all channels and badly coupled channels. seisDAE is a U-Net denoising autoencoder that works on the time–frequency (STFT) image of one trace and predicts which parts are signal; it was built and trained for seismometer data. This project asks whether it also works on DAS, and tests the answer honestly.
