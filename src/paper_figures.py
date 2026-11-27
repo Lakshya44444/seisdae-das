@@ -563,9 +563,8 @@ def fig_timefreq():
         axes[i, 1].set_ylim(0, 40)
         axes[i, 1].set_ylabel("Hz", fontsize=7)
         axes[i, 1].grid(False)
-    axes[0, 0].set_title(f"{r.id} (M{r.magnitude:.1f}, {r.dist_km:.0f} km), channel {ch}; "
-                         "dashed: predicted P (orange), S (blue)", fontsize=7.5, loc="left")
-    axes[0, 1].set_title("Spectrogram (dB, same scale)", fontsize=7.5, loc="left")
+    fig.suptitle(f"{r.id} (M{r.magnitude:.1f}, {r.dist_km:.0f} km), channel {ch}. Left: waveform, each normalised; "
+                 "dashed: predicted P (orange) and S (blue). Right: spectrogram, same dB scale", fontsize=7.5)
     axes[-1, 0].set_xlabel("Time (s)")
     axes[-1, 1].set_xlabel("Time (s)")
     fig.colorbar(im, ax=axes[:, 1], shrink=0.6, label="Power (dB)")

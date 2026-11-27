@@ -117,6 +117,17 @@ def summarise(d):
             dm, dlo, dhi = bootstrap(diff, E["bootstrap_draws"], CFG["seed"])
             paired.append(dict(method=name, minus="Bandpass 1-10 Hz", diff_db=dm, lo=dlo, hi=dhi,
                                higher=int((diff > 0).sum()), events=len(diff)))
+    # paired AUC difference to the bandpass: the same resampled windows for both methods
+    B = E["bootstrap_draws"]
+    r2 = np.random.default_rng(CFG["seed"])
+    ie = [r2.integers(0, len(eqw), len(eqw)) for _ in range(B)]
+    inz = [r2.integers(0, len(nzw), len(nzw)) for _ in range(B)]
+    bp_e, bp_n = eqw["Bandpass 1-10 Hz"].to_numpy(), nzw["Bandpass 1-10 Hz"].to_numpy()
+    for row in paired:
+        me_, mn_ = eqw[row["method"]].to_numpy(), nzw[row["method"]].to_numpy()
+        diffs = [auc(me_[a], mn_[b]) - auc(bp_e[a], bp_n[b]) for a, b in zip(ie, inz)]
+        row["auc_diff"] = auc(me_, mn_) - auc(bp_e, bp_n)
+        row["auc_diff_lo"], row["auc_diff_hi"] = np.percentile(diffs, [2.5, 97.5])
     s, p = pd.DataFrame(summary), pd.DataFrame(paired)
     s.to_csv(OUT / "onset_snr_summary.csv", index=False)
     p.to_csv(OUT / "onset_snr_paired.csv", index=False)
@@ -129,7 +140,9 @@ def summarise(d):
     print("\nEarthquake onset SNR minus bandpass, paired per event ('yes' = interval excludes zero):")
     for r in p.itertuples():
         sig = "yes" if r.lo > 0 or r.hi < 0 else "no"
-        print(f"  {r.method:26}{r.diff_db:+7.2f} [{r.lo:+.2f},{r.hi:+.2f}] {sig:3}  higher in {r.higher}/{r.events}")
+        asig = "yes" if r.auc_diff_lo > 0 or r.auc_diff_hi < 0 else "no"
+        print(f"  {r.method:26}{r.diff_db:+7.2f} [{r.lo:+.2f},{r.hi:+.2f}] {sig:3}  higher in {r.higher:2d}/{r.events}"
+              f"   AUC {r.auc_diff:+.3f} [{r.auc_diff_lo:+.3f},{r.auc_diff_hi:+.3f}] {asig}")
     print("\nFiles: results/onset_snr_rows.csv, onset_snr_summary.csv, onset_snr_paired.csv")
 
 

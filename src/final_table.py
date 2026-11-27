@@ -34,6 +34,7 @@ FAMILIES = {
     "2-D U-Net v1 (3 seeds)": ["unet2d_s2026", "unet2d_s2027", "unet2d_s2028"],
     "2-D U-Net v2": ["unet2d_v2_s2026"],
     "2-D U-Net v3": ["unet2d_v3_s2026"],
+    "2-D U-Net v4": ["unet2d_v4_s2026"],
 }
 DETECTION = {
     "Bandpass": ["Bandpass 1-10 Hz"],
