@@ -98,4 +98,8 @@ No method is a clear winner. The intervals overlap, and the paired differences b
     - **v2 and v3 on test:** SI-SDR at 0 dB −2.17 and −2.09 dB; AUC 0.575 and 0.586. Both below v1, as on validation.
     - Training: about 15–22 s per epoch on a laptop CPU; early stopping after 12–37 epochs (v1: 31–37, v2: 12, v3: 14). Two runs had one diverging epoch (v3 epoch 8, seed 2027 epoch 32); the saved weights are from the best epoch before it.
 
+12. **U-Net v4 and onset SNR (`src/onset_snr.py`, `results/onset_snr_*.csv`, 27 November).**
+    - v4 (v1 with traffic-free targets): first run diverged (bug, see decision log); second run: validation AUC 0.565 and mean SI-SDR −3.86 dB against 0.585 and −2.32 dB for v1, so v1 stays. Test: AUC 0.580; SI-SDR gain −1.99, −2.51, −3.40, −5.08, −7.79 dB.
+    - Onset SNR (Steinberg et al., 2025), 73 recorded test earthquakes / 210 noise windows, minus the 1–10 Hz bandpass (17.20 dB): seisDAE released +1.76 [+1.10, +2.48] (58/73 higher), seisDAE fine-tuned s2026 +1.16 [+0.66, +1.70] (49/73), f-k +0.39 (n.s.), U-Net v1 −0.49 to −1.59, jDAS −1.19. AUC: bandpass 0.616, seisDAE released 0.668, fine-tuned 0.680 (differences +0.052 and +0.064, not significant).
+
 The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_retuned_*.csv`, `detection_sensitivity_test.csv`, `variants_*.csv`, `synthetic_seeds_*.csv`). The figures are in `results/roc.png` and `results/figures/`.
