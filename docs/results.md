@@ -71,7 +71,7 @@ No method is a clear winner. The intervals overlap, and the paired differences b
    | seisDAE minus bandpass, synthetic, significant at | +5 dB (+3.02) and +10 dB (+4.77); worse but not significant at −10 dB (−2.38 [−4.53, +0.04]) | +10 dB only (+3.89 [1.57, 6.13]) |
 
    - The real-record SNR gain also rewards removing pre-event noise, so the synthetic test is shown beside it.
-   - Conclusion: on the data type it was built for, the released seisDAE clearly works (large real-record gain; in the synthetic test better than the bandpass at high input SNR, level or worse at low input SNR, e.g. −2.38 dB [−4.53, +0.04] on land at −10 dB). The real-record gain needs the control in item 13. Its failure on DAS is therefore a change of data type, not a fault of the model or of our code.
+   - Conclusion (revised 28 November after the control in item 13): the real-record SNR gain is mostly an artefact of silencing the pre-event window. What remains: in the synthetic test the released seisDAE beats the bandpass at high input SNR (land +5 and +10 dB, ocean bottom +10 dB) and is level or worse at low input SNR (land −2.38 dB [−4.53, +0.04] at −10 dB); on the ocean bottom its SI-SDR gain is positive at every level (+2.28 to +9.36 dB, 11 references). It does not separate earthquake records from noise better than the raw data or a bandpass.
 
 10. **jDAS (`src/jdas.py`, `results/synthetic_jdas_*.csv`, `results/jdas_*`).** Released network rebuilt layer by layer; `python -m src.jdas check` gives a relative difference of 0 to the released file. Fine-tuned and trained from scratch on train-day windows (self-supervised, 40 epochs, seed 2026); validation loss fell from 0.157 to 0.140 (fine-tuned) and from 0.177 to 0.140 (from scratch).
 
@@ -101,5 +101,20 @@ No method is a clear winner. The intervals overlap, and the paired differences b
 12. **U-Net v4 and onset SNR (`src/onset_snr.py`, `results/onset_snr_*.csv`, 27 November).**
     - v4 (v1 with traffic-free targets): first run diverged (bug, see decision log); second run: validation AUC 0.565 and mean SI-SDR −3.86 dB against 0.585 and −2.32 dB for v1, so v1 stays. Test: AUC 0.580; SI-SDR gain −1.99, −2.51, −3.40, −5.08, −7.79 dB.
     - Onset SNR (Steinberg et al., 2025), 73 recorded test earthquakes / 210 noise windows, minus the 1–10 Hz bandpass (17.20 dB): seisDAE released +1.76 [+1.10, +2.48] (58/73 higher), seisDAE fine-tuned s2026 +1.16 [+0.66, +1.70] (49/73), f-k +0.39 (n.s.), U-Net v1 −0.49 to −1.59, jDAS −1.19. AUC: bandpass 0.616, seisDAE released 0.668, fine-tuned 0.680 (differences +0.052 and +0.064, not significant).
+
+13. **Control of the public-check SNR gain (`python -m src.public_check control`, `results/public_check_control*.csv`, 28 November; plan in the decision log before running).** The same SNR measure (power 0–20 s after P over 1–9 s before) applied to the noise-only windows (P−130 to P−70 s), and the AUC that separates earthquake records from noise windows by each method's output SNR. Bootstrap over events.
+
+    | | Gain on earthquakes | Gain on noise only | Net | AUC earthquakes vs noise |
+    |---|---|---|---|---|
+    | Land, raw | 0 | 0 | 0 | 0.956 [0.925, 0.982] |
+    | Land, bandpass 1–10 Hz | +3.58 [+2.87, +4.23] | −0.38 | +3.95 | 0.977 [0.948, 0.998] |
+    | Land, seisDAE released | +14.88 [+13.30, +16.46] | +9.85 | +5.03 | 0.893 [0.841, 0.938] |
+    | Ocean bottom, raw | 0 | 0 | 0 | 0.618 [0.557, 0.677] |
+    | Ocean bottom, bandpass 1–10 Hz | +2.00 [+1.35, +2.70] | −0.28 | +2.28 | 0.719 [0.666, 0.777] |
+    | Ocean bottom, seisDAE released | +12.22 [+10.12, +14.37] | +11.86 | +0.37 | 0.629 [0.569, 0.689] |
+
+    - Most of seisDAE's real-record SNR gain also appears on noise-only windows, so it comes from suppressing the pre-event part of a window, not from recovering earthquake signal. Net of this, it is +5.0 dB on land and +0.4 dB on the ocean bottom.
+    - Separating earthquake records from noise windows, seisDAE is worse than the raw data on land (0.893 vs 0.956) and no better on the ocean bottom (0.629 vs 0.618); the bandpass is best on both.
+    - The headline public-check claim is therefore revised: the released seisDAE improves waveform shape at moderate and high SNR (synthetic test) but does not make earthquakes easier to find. The DAS onset-SNR result (item 12) is not affected in the same way, because it was reported together with the same measure on noise windows (seisDAE +0.34 dB over the bandpass on noise, +1.76 dB on earthquakes).
 
 The full numbers are in `results/` (`summary.md`, `detection_*.csv`, `detection_retuned_*.csv`, `detection_sensitivity_test.csv`, `variants_*.csv`, `synthetic_seeds_*.csv`). The figures are in `results/roc.png` and `results/figures/`.
