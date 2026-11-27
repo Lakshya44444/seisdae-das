@@ -255,15 +255,71 @@ def figure():
     print("figure: results/figures/public_check_examples.png (median-SNR record of each site)")
 
 
+def control():
+    """Checks requested in review (28 Nov), fixed before running.
+
+    1. Null test: the same SNR measure on the noise windows (P-130 s to P-70 s, no
+       earthquake expected). A method whose "SNR gain" on pure noise is as large as on
+       earthquakes is not recovering signal.
+    2. Separation: ROC AUC of earthquake records against noise windows using the
+       output SNR of each method (as the DAS detection test).
+    3. Real-record SNR gain with a bootstrap over events instead of records (on the
+       ocean bottom one event often gives two records).
+    """
+    from .detection_stats import auc
+
+    net = SeisDAE(ROOT / "models/gr_mixed_stft.h5", ROOT / "models/gr_mixed_stft.config")
+    rows, summ = [], []
+    rng = np.random.default_rng(SEED)
+    for site in SITES:
+        m, sig, noi = load(site)
+        if m is None or len(m) == 0:
+            continue
+        out_s, out_n = run(net, sig), run(net, noi)
+        base_s, base_n = snr_db(sig), snr_db(noi)
+        events = m.id.str.rsplit("_", n=1).str[-1].to_numpy()
+        for name in out_s:
+            s_db, n_db = snr_db(out_s[name]), snr_db(out_n[name])
+            g_s, g_n = s_db - base_s, n_db - base_n
+            for i in range(len(m)):
+                rows.append(dict(site=site, id=m.id[i], method=name, event_gain_db=g_s[i], noise_gain_db=g_n[i],
+                                 event_snr_db=s_db[i], noise_snr_db=n_db[i]))
+            ue = np.unique(events)
+            boots = []
+            for _ in range(2000):
+                pick = rng.choice(ue, len(ue))
+                idx = np.concatenate([np.where(events == e)[0] for e in pick])
+                boots.append(g_s[idx].mean())
+            a = auc(s_db, n_db)
+            ab = [auc(s_db[rng.integers(0, len(s_db), len(s_db))], n_db[rng.integers(0, len(n_db), len(n_db))])
+                  for _ in range(2000)]
+            summ.append(dict(site=site, method=name, records=len(m), events=len(ue),
+                             event_gain_db=g_s.mean(), event_gain_lo=np.percentile(boots, 2.5),
+                             event_gain_hi=np.percentile(boots, 97.5), noise_gain_db=g_n.mean(),
+                             net_gain_db=g_s.mean() - g_n.mean(), auc=a, auc_lo=np.percentile(ab, 2.5),
+                             auc_hi=np.percentile(ab, 97.5)))
+    pd.DataFrame(rows).to_csv(OUT / "public_check_control_rows.csv", index=False)
+    d = pd.DataFrame(summ)
+    d.to_csv(OUT / "public_check_control.csv", index=False)
+    print("Controls for the real-record SNR gain (dB). Brackets: 95% interval, bootstrap over events.\n")
+    print(f"{'site':5} {'method':18}{'gain on earthquakes':>28}{'gain on noise':>15}{'net':>8}{'AUC eq vs noise':>26}")
+    for r in d.itertuples():
+        print(f"{r.site:5} {r.method:18}{r.event_gain_db:+9.2f} [{r.event_gain_lo:+.2f},{r.event_gain_hi:+.2f}]"
+              f"{r.noise_gain_db:+15.2f}{r.net_gain_db:+8.2f}{r.auc:10.3f} [{r.auc_lo:.3f},{r.auc_hi:.3f}]")
+    print("\nFiles: results/public_check_control.csv, public_check_control_rows.csv")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("step", choices=["download", "evaluate"])
+    p.add_argument("step", choices=["download", "evaluate", "control"])
     p.add_argument("site", nargs="?", choices=list(SITES))
     a = p.parse_args()
     if a.step == "download":
         if not a.site:
             p.error("download needs a site: land or obs")
         download(a.site)
+    elif a.step == "control":
+        control()
     else:
         evaluate()
 
