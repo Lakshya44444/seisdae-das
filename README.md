@@ -127,6 +127,7 @@ src/
   unet2d.py          our supervised 2-D U-Net (channels x time), trained on train-day mixtures
   jdas_diagnose.py   why jDAS fails here: clean-signal test, coherence, common-mode removal
   public_check.py    released seisDAE on public land and ocean-bottom seismometer data
+  demo.py            download one real window, run every method, make the figures (for reviewers)
   onset_snr.py       onset SNR of recorded test windows, as defined by Steinberg et al. (2025)
   denoise_file.py    denoise your own file (miniSEED/SAC/SEG-Y, .npy, .h5) with every method
   paper_figures.py   all figures of the paper (results/figures/paper/)

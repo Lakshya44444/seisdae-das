@@ -3,6 +3,7 @@ vendor/
 __pycache__/
 *.pyc
 data/ridgecrest/gathers/
+results/demo/*/*.npz
 data/ridgecrest/gathers_*/
 data/ridgecrest/upstream/
 data/ridgecrest/upstream_*/
@@ -10,7 +11,11 @@ data/v4/
 checkpoints/
 old_runs/
 results/example_*.npz
-models/variants/
+models/variants/*
+!models/variants/finetune_s2026.h5
+!models/variants/finetune_s2026.config
 data/public/
 models/jdas/
-models/unet2d/
+models/unet2d/*
+!models/unet2d/s2026.h5
+!models/unet2d/s2026.json
