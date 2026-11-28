@@ -73,6 +73,63 @@ def panel_letter(ax, k):
     ax.set_title(f"({'abcdefghij'[k]}) {t}".strip(), loc="left", fontsize=8.5, fontweight="bold")
 
 
+# ---------------------------------------------------------------- study workflow (no data needed)
+
+
+def fig_workflow():
+    """Schematic of the study: data, preprocessing and splits, methods, evaluation."""
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+
+    cols = [
+        ("Data", "#E8F1F8", "#0072B2", [
+            ("Ridgecrest DAS", "36 days, June–July 2020\n96 channels, 760 m"),
+            ("Land broadband", "IU.ANMO, 2016–2020\n100 records, M ≥ 4 at 1–8°"),
+            ("Ocean-bottom (OBS)", "Cascadia 7D, 2013–2014\n164 records, 19 stations"),
+        ]),
+        ("Preprocessing", "#EEF6EE", "#009E73", [
+            ("Windows", "60 s, P at 10 s, 100 Hz\nmedian removal, 0.5 Hz high-pass"),
+            ("Day-based split", "day mod 5: 0–2 train,\n3 validation, 4 test"),
+            ("Labels", "clean: ≥ 30% of channels\n≥ 10 dB SNR after f-k"),
+        ]),
+        ("Methods", "#FBF1E6", "#D55E00", [
+            ("Filters", "bandpass (Butterworth)\nf-k apparent-velocity filter"),
+            ("seisDAE (single channel)", "released, scratch, fine-tuned\nSTFT-mask U-Net, 3 seeds"),
+            ("jDAS (multi-channel)", "released, fine-tuned, scratch\nself-supervised"),
+            ("2-D U-Net (ours)", "channels × time, supervised\nv1 (3 seeds), v2–v4"),
+        ]),
+        ("Evaluation", "#F3EEF7", "#7A4E9A", [
+            ("Waveform fidelity", "SI-SDR gain, 19 events\ninput SNR −10 to +10 dB"),
+            ("Detection", "ROC AUC, 73 earthquake vs\n210 noise windows"),
+            ("Onset SNR", "continuous SNR of\nSteinberg et al. (2025)"),
+            ("Statistics", "paired bootstrap, 5000 draws\nnoise-window control"),
+        ]),
+    ]
+    fig, ax = plt.subplots(figsize=(11.5, 5.0))
+    ax.set_xlim(0, 4)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+    w, x0 = 0.86, 0.07
+    for i, (head, fill, edge, boxes) in enumerate(cols):
+        x = i + x0
+        ax.add_patch(FancyBboxPatch((x, 0.02), w, 0.96, boxstyle="round,pad=0,rounding_size=0.03",
+                                    fc=fill, ec="none", zorder=0))
+        ax.text(x + w / 2, 0.935, head, ha="center", va="center", fontsize=11, fontweight="bold", color=edge)
+        n = len(boxes)
+        h, gap, top = 0.80 / n - 0.03, 0.03, 0.88
+        for j, (title, body) in enumerate(boxes):
+            y = top - (j + 1) * h - j * gap
+            ax.add_patch(FancyBboxPatch((x + 0.04, y), w - 0.08, h, boxstyle="round,pad=0,rounding_size=0.02",
+                                        fc="white", ec=edge, lw=1.2, zorder=1))
+            ax.text(x + w / 2, y + h * 0.70, title, ha="center", va="center", fontsize=8.6, fontweight="bold",
+                    color="#1F2328", zorder=2)
+            ax.text(x + w / 2, y + h * 0.33, body, ha="center", va="center", fontsize=7.1, color="#3A3F45",
+                    linespacing=1.25, zorder=2)
+        if i < len(cols) - 1:
+            ax.add_patch(FancyArrowPatch((x + w + 0.005, 0.5), (x + 1 - 0.005, 0.5), arrowstyle="-|>",
+                                         mutation_scale=16, lw=1.6, color="#555555", zorder=3))
+    save(fig, "fig00_workflow")
+
+
 # ---------------------------------------------------------------- figures from tables
 def fig_map():
     info = pd.read_csv(DATA / "das_info.csv")
@@ -608,6 +665,7 @@ def main():
     if a.timefreq:
         fig_timefreq()
         return
+    fig_workflow()
     fam = per_event_families()
     fig_map()
     fig_public()
